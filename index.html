@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a1428">
+  <title>KEC Sulaimanyeh Attendance System — Ms: Suhaila Ali</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@500;700;800&amp;display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy-950: #0a1428;
+      --navy-900: #112240;
+      --navy-800: #1d3557;
+      --gold-500: #d97706;
+      --gold-400: #f59e0b;
+    }
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, 'Segoe UI', 'Noto Sans Arabic', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button, a, select, input, label, .nav-tab, .pill-btn, .status-btn {
+      touch-action: manipulation;
+    }
+    body {
+      background: #f1f5f9;
+      color: #0f172a;
+      margin: 0;
+      padding: 0;
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    .hidden { display: none !important; }
+    @media screen and (max-width: 768px) {
+      input, select, textarea { font-size: 16px !important; }
+    }
+    .top-header {
+      background: linear-gradient(135deg, #0a1428 0%, #162a4a 60%, #1e3a8a 100%);
+      color: #fff;
+      border-bottom: 3px solid #f59e0b;
+      box-shadow: 0 4px 15px rgba(10, 20, 40, 0.2);
+    }
+    .pill-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.2);
+      white-space: nowrap;
+    }
+    .nav-tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px 8px;
+      border-radius: 12px;
+      cursor: pointer;
+      color: rgba(255,255,255,0.82);
+      font-weight: 700;
+      font-size: 0.84rem;
+      user-select: none;
+    }
+    .nav-tab.active {
+      background: #ffffff;
+      color: #0f172a;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .status-btn {
+      padding: 6px 10px;
+      border-radius: 9px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      border: 1.5px solid #cbd5e1;
+      background: #fff;
+      color: #334155;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .status-btn.active-P { background: #16a34a; color: #fff; border-color: #15803d; }
+    .status-btn.active-L { background: #0284c7; color: #fff; border-color: #0369a1; }
+    .status-btn.active-E { background: #d97706; color: #fff; border-color: #b45309; }
+    .status-btn.active-A { background: #dc2626; color: #fff; border-color: #b91c1c; }
+    .status-btn.active-S { background: #7c3aed; color: #fff; border-color: #6d28d9; }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+    .modal-backdrop.show { display: flex; }
+  </style>
+</head>
+<body onload="initApp()">
+
+  <!-- TOP HEADER -->
+  <header class="top-header p-4 sticky top-0 z-45">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-3.5 text-center md:text-right">
+        <div class="relative w-20 h-20 rounded-full bg-white p-1 shadow-2xl border-2 border-amber-400 cursor-pointer flex-shrink-0 overflow-hidden">
+          <svg viewBox="0 0 200 200" class="w-full h-full rounded-full bg-white">
+            <circle cx="100" cy="100" r="99" fill="#ffffff"></circle>
+            <text x="100" y="54" text-anchor="middle" fill="#000000" font-size="15.5" font-weight="900" font-family="Georgia, serif" letter-spacing="4">K E C</text>
+            <circle cx="74" cy="91" r="12.5" fill="#c89d42"></circle>
+            <circle cx="98" cy="103" r="11.5" fill="#2563eb"></circle>
+            <circle cx="111" cy="126" r="10" fill="#b57edc"></circle>
+            <text x="100" y="175" text-anchor="middle" fill="#000000" font-size="13" font-weight="800">EST. 2013</text>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg md:text-xl font-extrabold tracking-tight text-white">Kurdistan Educational Compound / Sulaimanyeh</h1>
+          <p class="text-xs text-amber-400 font-bold">(KEC - EST. 2013) • بەڕێوەبەر: <span id="headerPrincipalName">Ms: Suhaila Ali</span> <span id="roleStatusBadge" class="bg-white/15 text-white px-2 py-0.5 rounded-full text-[10px] mr-1">👨‍🏫 دۆخی مامۆستا</span> <span id="cloudLiveBadge" class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full text-[10px] mr-1">⚡ Supabase Live</span></p>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center justify-center gap-1.5">
+        <button onclick="openPrincipalModal()" id="principalHeaderBtn" class="pill-btn bg-amber-500 text-slate-950 hover:bg-amber-400 font-extrabold shadow">👑 بەڕێوەبەر / ڕێپێدراو</button>
+        <button onclick="logoutPrincipalRole()" id="logoutPrincipalBtn" class="pill-btn bg-red-600 text-white hover:bg-red-500 hidden">🚪 دەرچوون</button>
+        <button onclick="cloudSyncUp()" class="pill-btn bg-blue-600 text-white hover:bg-blue-500">⬆️ سەیڤکردن لە Supabase</button>
+        <button onclick="cloudSyncDown()" class="pill-btn bg-sky-600 text-white hover:bg-sky-500">⬇️ نوێکردنەوە لە Supabase</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <nav class="max-w-6xl mx-auto px-4 mt-4">
+    <div class="bg-slate-900 p-1.5 rounded-2xl flex gap-1 shadow-lg">
+      <div id="tab-subjects" class="nav-tab" onclick="switchTab('subjects')">1. 📚 وانەکان</div>
+      <div id="tab-daily" class="nav-tab active" onclick="switchTab('daily')">2. 📋 تۆماری ڕۆژانە</div>
+      <div id="tab-weekly" class="nav-tab" onclick="switchTab('weekly')">3. 📊 خشتەی هەفتانە</div>
+      <div id="tab-admin" class="nav-tab" onclick="switchTab('admin')">4. 👑 بەڕێوەبەر</div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-6xl mx-auto p-4 mb-20">
+
+    <!-- POPULATED CLASSES BANNER -->
+    <div id="populatedClassesBanner" class="mb-4 bg-amber-50 border-2 border-amber-300 rounded-2xl p-3 shadow-sm">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="text-xs font-bold text-amber-900 flex items-center gap-2">
+          <span>📌 پۆل و گروپە پڕکراوەکان:</span>
+          <div id="populatedClassesList" class="flex flex-wrap gap-1.5"></div>
+        </div>
+        <span class="text-[11px] text-amber-700 font-semibold">کرتە لە گروپەکان بکە بۆ چوونە سەر پۆلەکە</span>
+      </div>
+    </div>
+
+    <!-- GRADE & GROUP SELECTOR BAR -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2 w-full md:w-auto justify-center">
+        <span class="text-xs font-bold text-slate-500">پۆل (Grade):</span>
+        <button onclick="selectGrade(10)" id="gradeBtn10" class="px-4 py-2 rounded-xl text-xs font-extrabold bg-slate-200 text-slate-700">پۆلی ١٠</button>
+        <button onclick="selectGrade(11)" id="gradeBtn11" class="px-4 py-2 rounded-xl text-xs font-extrabold bg-slate-200 text-slate-700">پۆلی ١١</button>
+        <button onclick="selectGrade(12)" id="gradeBtn12" class="px-4 py-2 rounded-xl text-xs font-extrabold bg-slate-900 text-white shadow">پۆلی ١٢</button>
+      </div>
+      <div class="flex items-center gap-1.5 w-full md:w-auto justify-center flex-wrap">
+        <span class="text-xs font-bold text-slate-500 ml-1">گروپ:</span>
+        <button onclick="selectGroup('A')" id="groupBtnA" class="w-9 h-9 rounded-xl font-extrabold text-xs bg-slate-200 text-slate-700">A</button>
+        <button onclick="selectGroup('B')" id="groupBtnB" class="w-9 h-9 rounded-xl font-extrabold text-xs bg-slate-200 text-slate-700">B</button>
+        <button onclick="selectGroup('C')" id="groupBtnC" class="w-9 h-9 rounded-xl font-extrabold text-xs bg-slate-200 text-slate-700">C</button>
+        <button onclick="selectGroup('D')" id="groupBtnD" class="w-9 h-9 rounded-xl font-extrabold text-xs bg-slate-200 text-slate-700">D</button>
+        <button onclick="selectGroup('E')" id="groupBtnE" class="w-9 h-9 rounded-xl font-extrabold text-xs bg-slate-200 text-slate-700">E</button>
+        <button onclick="selectGroup('F')" id="groupBtnF" class="w-9 h-9 rounded-xl font-extrabold text-xs bg-amber-500 text-slate-950 shadow">F</button>
+      </div>
+    </div>
+
+    <!-- TAB 1: SUBJECTS -->
+    <div id="section-subjects" class="space-y-6 hidden">
+      <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-5 shadow-xl border border-slate-800">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base md:text-lg font-black text-amber-400">📚 هەڵبژاردنی وانە و چوونەژوورەوەی مامۆستا</h2>
+            <p class="text-xs text-slate-300 mt-1">وانەی خۆت هەڵبژێرە بۆ کردنەوەی تۆماری غیابات</p>
+          </div>
+          <div id="teacherSlotInfoBadge" class="bg-white/10 px-4 py-2 rounded-xl text-xs font-bold border border-white/15">پۆلی 12 | گروپی F</div>
+        </div>
+      </div>
+      <div id="subjectsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <!-- TAB 2: DAILY REGISTER -->
+    <div id="section-daily" class="space-y-6">
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-xs font-bold text-slate-600">📅 ڕێکەوت:</span>
+          <input type="date" id="attendanceDateInput" onchange="onDateChange(this.value)" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800">
+          <select id="dayOfWeekSelect" onchange="onDayOfWeekChange(this.value)" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800">
+            <option value="Sun">یەکشەممە (Sun)</option>
+            <option value="Mon">دووشەممە (Mon)</option>
+            <option value="Tue">سێشەممە (Tue)</option>
+            <option value="Wed">چوارشەممە (Wed)</option>
+            <option value="Thu">پێنجشەممە (Thu)</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <span id="activeTeacherBadge" class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-xl text-xs font-extrabold border border-indigo-200">⚡ Physics (فیزیا) | پۆلی 12-F</span>
+          <button onclick="markAllPresentAction()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold">✅ هەمووی ئامادە (P)</button>
+        </div>
+      </div>
+
+      <!-- Summary Counters -->
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center">
+          <div class="text-[11px] font-bold text-emerald-800">✅ ئامادە (P)</div>
+          <div id="countPresent" class="text-lg font-black text-emerald-700">0</div>
+        </div>
+        <div class="bg-sky-50 border border-sky-200 rounded-xl p-3 text-center">
+          <div class="text-[11px] font-bold text-sky-800">⏰ درەنگ هاتوو (L)</div>
+          <div id="countLate" class="text-lg font-black text-sky-700">0</div>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-center">
+          <div class="text-[11px] font-bold text-amber-800">📝 مۆڵەت (E)</div>
+          <div id="countExcused" class="text-lg font-black text-amber-700">0</div>
+        </div>
+        <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
+          <div class="text-[11px] font-bold text-red-800">❌ غیاب (A)</div>
+          <div id="countAbsent" class="text-lg font-black text-red-700">0</div>
+        </div>
+        <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 text-center col-span-2 sm:col-span-1">
+          <div class="text-[11px] font-bold text-purple-800">🚪 دەرکراو (S)</div>
+          <div id="countSentOut" class="text-lg font-black text-purple-700">0</div>
+        </div>
+      </div>
+
+      <!-- Add Student Bar -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+        <div class="flex flex-col md:flex-row gap-3">
+          <input type="text" id="newStudentNameInput" placeholder="ناوی سیانی خوێندکار..." class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800">
+          <input type="text" id="newStudentPhoneInput" placeholder="ژمارەی بەخێوکار (0770...)" class="w-full md:w-64 bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800">
+          <button onclick="addNewStudentAction()" class="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-extrabold shadow">➕ زیادکردن</button>
+        </div>
+      </div>
+
+      <!-- Daily Attendance Table -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-wrap gap-2">
+          <h3 class="text-xs font-black text-slate-800" id="dailyTableTitle">تۆماری ڕۆژانە</h3>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-slate-500" id="dailyStudentCountBadge">0 خوێندکار</span>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-right border-collapse">
+            <thead>
+              <tr class="bg-slate-100 text-slate-700 text-[11px] font-extrabold border-b border-slate-200">
+                <th class="p-3 w-10 text-center">#</th>
+                <th class="p-3">ناوی خوێندکار</th>
+                <th class="p-3">ژمارەی بەخێوکار</th>
+                <th class="p-3 text-center">دۆخی ئامادەبوون</th>
+                <th class="p-3 text-center">تێبینی</th>
+                <th class="p-3 text-center">کردارەکان</th>
+              </tr>
+            </thead>
+            <tbody id="dailyTableBody" class="divide-y divide-slate-100 text-xs font-semibold text-slate-700"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: WEEKLY REPORT -->
+    <div id="section-weekly" class="space-y-6 hidden">
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex items-center justify-between">
+        <h3 class="text-xs font-black text-slate-800">📊 خشتەی هەفتانەی ئامادەبوون</h3>
+        <button onclick="renderWeeklyTable()" class="pill-btn bg-slate-900 text-white">🔄 نوێکردنەوە</button>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-right border-collapse">
+            <thead>
+              <tr class="bg-slate-100 text-slate-700 text-[11px] font-extrabold border-b border-slate-200">
+                <th class="p-3 w-12 text-center">#</th>
+                <th class="p-3">ناوی خوێندکار</th>
+                <th class="p-3 text-center">یەکشەممە</th>
+                <th class="p-3 text-center">دووشەممە</th>
+                <th class="p-3 text-center">سێشەممە</th>
+                <th class="p-3 text-center">چوارشەممە</th>
+                <th class="p-3 text-center">پێنجشەممە</th>
+                <th class="p-3 text-center">کردار</th>
+              </tr>
+            </thead>
+            <tbody id="weeklyTableBody" class="divide-y divide-slate-100 text-xs font-semibold text-slate-700"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: ADMIN PANEL -->
+    <div id="section-admin" class="space-y-6 hidden">
+      <div class="bg-gradient-to-r from-amber-600 to-amber-800 text-white rounded-2xl p-6 shadow-xl">
+        <h2 class="text-lg font-black">👑 پانێڵی بەڕێوەبەر (Ms: Suhaila Ali)</h2>
+        <p class="text-xs text-amber-100 mt-1">چاودێری گشت وانەکان و پاسۆردی مامۆستایان</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toastNotification" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-amber-400/40 text-xs font-extrabold z-[2000] pointer-events-none transition-opacity duration-300 opacity-0">
+    <span id="toastText"></span>
+  </div>
+
+  <!-- TEACHER PASSWORD MODAL -->
+  <div id="passwordModal" class="modal-backdrop">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-black text-slate-900" id="modalSubjectTitle">وانە</h3>
+        <button onclick="closePasswordModal()" class="text-slate-400 hover:text-slate-700 font-bold text-lg">✕</button>
+      </div>
+      <div class="space-y-2">
+        <label class="text-xs font-bold text-slate-600 block">پاسۆردی مامۆستا:</label>
+        <input type="password" id="loginPasswordInput" onkeydown="if(event.key==='Enter') submitPasswordLogin()" placeholder="پاسۆرد بنووسە..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900">
+      </div>
+      <button onclick="submitPasswordLogin()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow">
+        🔓 کردنەوەی تۆماری غیابات
+      </button>
+    </div>
+  </div>
+
+  <!-- PRINCIPAL LOGIN MODAL -->
+  <div id="principalModal" class="modal-backdrop">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-black text-slate-900">👑 چوونەژوورەوەی بەڕێوەبەر</h3>
+        <button onclick="closePrincipalModal()" class="text-slate-400 hover:text-slate-700 font-bold text-lg">✕</button>
+      </div>
+      <div class="space-y-3">
+        <input type="password" id="principalPasswordInput" onkeydown="if(event.key==='Enter') submitPrincipalLogin()" placeholder="کۆدی نهێنی (2013)..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900">
+      </div>
+      <button onclick="submitPrincipalLogin()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 py-2.5 rounded-xl text-xs font-extrabold shadow">
+        👑 چوونەژوورەوە
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. SUPABASE CLIENT
+    // Replace with your actual credentials
+    // ==========================================
+    const SUPABASE_URL = "https://qpemfisnznhrutaqfjee.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_o3VatdX_D2hf2QVQ..."; // Paste your complete publishable key here
+    let supabaseClient = null;
+
+    if (window.supabase && SUPABASE_URL.indexOf("your-project") === -1) {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+
+    var STORAGE_KEY = "KEC_SULAIMANYEH_STATE_V1";
+    var VAULT_ROSTERS_KEY = "KEC_PERMANENT_ROSTERS_VAULT_V1";
+    var ALL_GROUPS = ["A", "B", "C", "D", "E", "F"];
+
+    // ==========================================
+    // 2. YOUR COMPLETE STUDENT ROSTERS (RESTORED)
+    // ==========================================
+    var INITIAL_EMBEDDED_ROSTERS = {
+      "grade_10_group_A":[
+        {"id":"st_10_A_0","name":"ئارۆس ئارام علی عبدالکریم","phone":""},
+        {"id":"st_10_A_1","name":"ئاڵێ سه‌ركه‌وت على جعفر","phone":""},
+        {"id":"st_10_A_2","name":"أحمد سه‌ربه‌ست نادر عبدول","phone":""},
+        {"id":"st_10_A_3","name":"ئه‌رين أحمد مصطفى حسن","phone":""},
+        {"id":"st_10_A_4","name":"بارين به‌هزاد محمدرفيق محمدصاڵح","phone":""},
+        {"id":"st_10_A_5","name":"بارین کارزان عبدالوهاب محمد","phone":""},
+        {"id":"st_10_A_6","name":"بروا اسعد بهجت حسن","phone":""},
+        {"id":"st_10_A_7","name":"به‌یار علی عبدالله‌ محمد","phone":""},
+        {"id":"st_10_A_8","name":"تاڤی صلاح کریم احمد","phone":""},
+        {"id":"st_10_A_9","name":"تنۆک ئاوات محمد محمود","phone":""},
+        {"id":"st_10_A_10","name":"درود یوسف فائق محمد","phone":""},
+        {"id":"st_10_A_11","name":"دینا أبراهیم نجم ڕشید","phone":""},
+        {"id":"st_10_A_12","name":"دییه‌ کامه‌ران أحمد علی","phone":""},
+        {"id":"st_10_A_13","name":"ساڤیا سەروان صابیر عبدالله","phone":""},
+        {"id":"st_10_A_14","name":"لارا دانا نوری غفور","phone":""},
+        {"id":"st_10_A_15","name":"لامۆ أبوبكر حمه‌سعيد حمه‌صاڵح","phone":""},
+        {"id":"st_10_A_16","name":"لانۆ دەوەن خەسرەو مجید","phone":""},
+        {"id":"st_10_A_17","name":"لیا سورکێو ڕەشید محمد","phone":""},
+        {"id":"st_10_A_18","name":"محمد أسماعیل محمد خورشید","phone":""},
+        {"id":"st_10_A_19","name":"محمد به‌ختیار عثمان عبدول","phone":""},
+        {"id":"st_10_A_20","name":"مه‌ند ئومێد رضا محمد","phone":""},
+        {"id":"st_10_A_21","name":"مه‌يار پشتيوان عبدالله غفور","phone":""},
+        {"id":"st_10_A_22","name":"هه‌نی هێمن حمه‌علی تۆفیق","phone":""},
+        {"id":"st_10_A_23","name":"ڕه‌وێن وریا نامق سعید","phone":""},
+        {"id":"st_10_A_24","name":"ڕەند ڕێکان جمال محمود","phone":""},
+        {"id":"st_10_A_25","name":"ڤارسان والی حمه‌سور رشید","phone":""}
+      ],
+      "grade_10_group_B":[
+        {"id":"st_10_B_0","name":"ئاران ئومێد عزيز مراد","phone":""},
+        {"id":"st_10_B_1","name":"ئانیا پشتیوان محمد محمود","phone":""},
+        {"id":"st_10_B_2","name":"ئاڵێ ئاراس رضا سعید","phone":""},
+        {"id":"st_10_B_3","name":"ئایه‌ ئاری فاتح حمەأمین","phone":""},
+        {"id":"st_10_B_4","name":"ئه‌شکان حکیم عمر أحمد","phone":""},
+        {"id":"st_10_B_5","name":"ئه‌نه‌س ئه‌یوب نامیق عبالرحمان","phone":""},
+        {"id":"st_10_B_6","name":"باوه‌ند هێمن لطیف حمه‌سعید","phone":""},
+        {"id":"st_10_B_7","name":"بره‌و أبوبکر عثمان صالح","phone":""},
+        {"id":"st_10_B_8","name":"تینا کمال قادر محمود","phone":""},
+        {"id":"st_10_B_9","name":"دينا هه‌ردى بهألدين درويش حمه‌أمين","phone":""},
+        {"id":"st_10_B_10","name":"دیار عدنان کمال خالید","phone":""},
+        {"id":"st_10_B_11","name":"ژالیا محمد فتاح قادر","phone":""},
+        {"id":"st_10_B_12","name":"سان شوان على أحمد","phone":""},
+        {"id":"st_10_B_13","name":"سروش عثمان علی مولود","phone":""},
+        {"id":"st_10_B_14","name":"لیا حیده‌ر علی محمد","phone":""},
+        {"id":"st_10_B_15","name":"لیا زانا محمد صالح","phone":""},
+        {"id":"st_10_B_16","name":"مینا محمود عبدالرحمن  محمود","phone":""},
+        {"id":"st_10_B_17","name":"مەم حسن محمد نورى","phone":""},
+        {"id":"st_10_B_18","name":"مەیلی نەورۆز عمر فرج","phone":""},
+        {"id":"st_10_B_19","name":"نالی اسماعیل محمد مولود","phone":""},
+        {"id":"st_10_B_20","name":"هانا سۆران  یاسین حمەکریم","phone":""},
+        {"id":"st_10_B_21","name":"هانۆ طارق فاروق انور","phone":""},
+        {"id":"st_10_B_22","name":"هاکان توانا عزیز سعید","phone":""},
+        {"id":"st_10_B_23","name":"هه‌نی هاوژین محمد محمد","phone":""},
+        {"id":"st_10_B_24","name":"هێلیا هیوا صالح محمود","phone":""},
+        {"id":"st_10_B_25","name":"هەستى رحیم احمد امین","phone":""},
+        {"id":"st_10_B_26","name":"ڕودین صباح جبار رضا","phone":""}
+      ],
+      "grade_10_group_C":[
+        {"id":"st_10_C_0","name":"ئانيا عطا عبدالله محمد","phone":""},
+        {"id":"st_10_C_1","name":"ئانیا والد فتاح صالح","phone":""},
+        {"id":"st_10_C_2","name":"أحمد أکرم حسن أحمد","phone":""},
+        {"id":"st_10_C_3","name":"ئه‌نوشه حيدر عزالدين أحمد","phone":""},
+        {"id":"st_10_C_4","name":"ئيليان ئامانج كريم حمه‌","phone":""},
+        {"id":"st_10_C_5","name":"ئينان بێستون حسن أحمد","phone":""},
+        {"id":"st_10_C_6","name":"ئیلیان کاروان جزا غەریب","phone":""},
+        {"id":"st_10_C_7","name":"ئێلا سالار فرج حمه‌صالح","phone":""},
+        {"id":"st_10_C_8","name":"پاشا زانا عبدالله‌ غریب","phone":""},
+        {"id":"st_10_C_9","name":"ته‌ژنه‌ دارا خليل حامد","phone":""},
+        {"id":"st_10_C_10","name":"دارین مجید محمود سلیمان","phone":""},
+        {"id":"st_10_C_11","name":"زیوا زامدار حمە رسول کریم","phone":""},
+        {"id":"st_10_C_12","name":"سایه‌ جبار مصطفی غفور","phone":""},
+        {"id":"st_10_C_13","name":"سایە سوران کریم سعید","phone":""},
+        {"id":"st_10_C_14","name":"گه‌ڵا نورى حمه‌لاو أحمد","phone":""},
+        {"id":"st_10_C_15","name":"له‌رێ كۆسره‌ت عثمان غفور","phone":""},
+        {"id":"st_10_C_16","name":"ليا هاودين محمود عبدالكريم","phone":""},
+        {"id":"st_10_C_17","name":"لیڤی دلێر محمد أحمد","phone":""},
+        {"id":"st_10_C_18","name":"محمد سوپا سلام رشيد","phone":""},
+        {"id":"st_10_C_19","name":"مه نه سه فتح الله . .","phone":""},
+        {"id":"st_10_C_20","name":"ڕامان هیوا نوری محمد","phone":""},
+        {"id":"st_10_C_21","name":"ڕه‌ندی ڕێبین عـمر علی","phone":""},
+        {"id":"st_10_C_22","name":"ڤیدا بختیار عارف حسن","phone":""},
+        {"id":"st_10_C_23","name":"ڤینا نازم حمید عەزیز","phone":""},
+        {"id":"st_10_C_24","name":"کارۆ طاهر حمه‌أمین حمه‌محمد","phone":""},
+        {"id":"st_10_C_25","name":"کاریا فاضل فائق رشید","phone":""}
+      ],
+      "grade_10_group_D":[
+        {"id":"st_10_D_0","name":"ئارا ئاوات كريم محمدسعيد","phone":""},
+        {"id":"st_10_D_1","name":"ئارا ريبوار توفيق صالح","phone":""},
+        {"id":"st_10_D_2","name":"ئارينۆ شۆڕش جبار محمد","phone":""},
+        {"id":"st_10_D_3","name":"ئاڵێ ئاراس رشيد عبدالله","phone":""},
+        {"id":"st_10_D_4","name":"أحمد زه‌رده‌شت لطیف مجید","phone":""},
+        {"id":"st_10_D_5","name":"ئه‌ژی نامۆ علی أحمد","phone":""},
+        {"id":"st_10_D_6","name":"ئه‌سما ئازاد حسین حمه‌کریم","phone":""},
+        {"id":"st_10_D_7","name":"ئەدیب پشتیوان محمد احمد","phone":""},
+        {"id":"st_10_D_8","name":"الحمزە علی  ناصر عبد الحسین","phone":""},
+        {"id":"st_10_D_9","name":"تاباز عداله‌ت فائق روستم","phone":""},
+        {"id":"st_10_D_10","name":"خانى ره‌نجده‌ر عثمان حمه‌أمين","phone":""},
+        {"id":"st_10_D_11","name":"دارين ئاكۆ محسن قادر","phone":""},
+        {"id":"st_10_D_12","name":"داناز ڕێبوار لطیف صالح","phone":""},
+        {"id":"st_10_D_13","name":"ساریا بارزان عزیز عبدالحمن","phone":""},
+        {"id":"st_10_D_14","name":"سالين علاء عبدالحسين شهاب","phone":""},
+        {"id":"st_10_D_15","name":"سێوه‌ سه‌رکه‌ژ مصطفی حسین","phone":""},
+        {"id":"st_10_D_16","name":"سەهەند کریم حمەصالح رضا","phone":""},
+        {"id":"st_10_D_17","name":"لۆڤیان هوشمند خلیل ابوبکر","phone":""},
+        {"id":"st_10_D_18","name":"لیا شۆڕش عبدالله سعید","phone":""},
+        {"id":"st_10_D_19","name":"لیا عبدالله فارس صالح","phone":""},
+        {"id":"st_10_D_20","name":"محمد أکبر نوری حمید","phone":""},
+        {"id":"st_10_D_21","name":"نیلا پەیوەند عثمان محمد امین","phone":""},
+        {"id":"st_10_D_22","name":"هه‌نی هێران کامل أمین","phone":""},
+        {"id":"st_10_D_23","name":"ڕه‌وێن سالار محمود أحمد","phone":""},
+        {"id":"st_10_D_24","name":"یاد ڕێبین أبوبکر شاسوار","phone":""},
+        {"id":"st_10_D_25","name":"یاسا ئازاد صالح طهماز","phone":""}
+      ],
+      "grade_11_group_A":[
+        {"id":"st_11_A_0","name":"ئەرینا محمد علی سعید","phone":"07508100591"},
+        {"id":"st_11_A_1","name":"ایهاب احمد عبدالالە البیطار","phone":""},
+        {"id":"st_11_A_2","name":"پاريا کامیار حمه‌على على","phone":""},
+        {"id":"st_11_A_3","name":"تۆلاس نەبەز عبدالله سعید","phone":""},
+        {"id":"st_11_A_4","name":"داریا جزا عبدالله أحمد","phone":""},
+        {"id":"st_11_A_5","name":"ديا كارزان سعيد ابراهیم","phone":""},
+        {"id":"st_11_A_6","name":"ژێوار شۆڕش کمال حمە سلیم","phone":""},
+        {"id":"st_11_A_7","name":"ساریا به‌ختیار عبدالله صالح","phone":""},
+        {"id":"st_11_A_8","name":"سینا سەربەست نادر عبدول","phone":""},
+        {"id":"st_11_A_9","name":"شازیار زانیار جبار کریم","phone":""},
+        {"id":"st_11_A_10","name":"لارسا سه‌رهه‌نگ لطيف محمد","phone":""},
+        {"id":"st_11_A_11","name":"لێوان هێرش مختار عبدالله","phone":""},
+        {"id":"st_11_A_12","name":"لێوان ڕێبوار علی عبدالله","phone":""},
+        {"id":"st_11_A_13","name":"لەنێ سەروەر أبوبکر حمەأمین","phone":""},
+        {"id":"st_11_A_14","name":"محمد حسن عبدالمجید أحمد","phone":""},
+        {"id":"st_11_A_15","name":"محمد عثمان خدر رسوڵ","phone":""},
+        {"id":"st_11_A_16","name":"مه‌هناز كوردۆ عزيز عبدالله","phone":""},
+        {"id":"st_11_A_17","name":"میلان زانا عبدالله سلیمان","phone":""},
+        {"id":"st_11_A_18","name":"هەنی ژیر فەرەیدون عمر","phone":""},
+        {"id":"st_11_A_19","name":"وارڤین غازی علی حسن","phone":""},
+        {"id":"st_11_A_20","name":"ڕاست هەلگورد ئاراز قادر","phone":""},
+        {"id":"st_11_A_21","name":"ڕەهەند ریبوار خالد عبداللە","phone":""},
+        {"id":"st_11_A_22","name":"کارۆ زرنگ سالار محمد","phone":""}
+      ],
+      "grade_11_group_B":[
+        {"id":"st_11_B_0","name":"ئارۆ ئاسۆ جمال جلال","phone":""},
+        {"id":"st_11_B_1","name":"ئاریاز کاردۆ ئومێد کاکه‌ڕه‌ش","phone":""},
+        {"id":"st_11_B_2","name":"ئاریۆ نەوزاد صالح کریم","phone":""},
+        {"id":"st_11_B_3","name":"ئانیا کاروان معروف محمود","phone":""},
+        {"id":"st_11_B_4","name":"ئاکار بایز لطیف عیسی","phone":""},
+        {"id":"st_11_B_5","name":"احمد کاوە محمد فتح اللە","phone":""},
+        {"id":"st_11_B_6","name":"بانو أبراهیم نجم الدین میرزا","phone":""},
+        {"id":"st_11_B_7","name":"خۆشەویست هاوژین صلاح الدین عباس","phone":""},
+        {"id":"st_11_B_8","name":"ژولیا شادمان عثمان صدیق","phone":""},
+        {"id":"st_11_B_9","name":"ساڤا سۆران معروف رؤوف","phone":""},
+        {"id":"st_11_B_10","name":"محمد بەختیار عمر سعید","phone":""},
+        {"id":"st_11_B_11","name":"محمد کۆچەر محمد صالح","phone":""},
+        {"id":"st_11_B_12","name":"نالی ئاکۆ اسماعیل عزیز","phone":""},
+        {"id":"st_11_B_13","name":"نالی نەوزاد محمد رشید","phone":""},
+        {"id":"st_11_B_14","name":"هانیا به‌ختیار عمر حمه‌عزیز","phone":""},
+        {"id":"st_11_B_15","name":"هێنی هێمن أسماعیل خالد","phone":""},
+        {"id":"st_11_B_16","name":"هەنۆ هاوڕێ جمیل محمد","phone":""},
+        {"id":"st_11_B_17","name":"وینا جلال عبدالرحمن أحمد","phone":""},
+        {"id":"st_11_B_18","name":"ڕۆژنه‌ بهاالدین صلاح الدین علی","phone":""},
+        {"id":"st_11_B_19","name":"ڕۆمان بێشوان طاهر محمدأمین","phone":""},
+        {"id":"st_11_B_20","name":"ڤان کاوان بهاءالدین محمد","phone":""},
+        {"id":"st_11_B_21","name":"کانیا کاروان معروف محمود","phone":""},
+        {"id":"st_11_B_22","name":"کەما خلیل یونس حمەخان","phone":""}
+      ],
+      "grade_11_group_C":[
+        {"id":"st_11_C_0","name":"ئالی گوران ابوبکر حسن","phone":""},
+        {"id":"st_11_C_1","name":"ئانۆ باوەڕ مهدی حمە صالح","phone":""},
+        {"id":"st_11_C_2","name":"أمنه ماجد فتح ألله جعفر","phone":""},
+        {"id":"st_11_C_3","name":"ئیلیان ئەرکان واحید صالح","phone":""},
+        {"id":"st_11_C_4","name":"ئەیمەن پشتیوان محمد احمد","phone":""},
+        {"id":"st_11_C_5","name":"به‌هێز گۆران كمال محمد","phone":""},
+        {"id":"st_11_C_6","name":"چێوار لقمان علی محمود","phone":""},
+        {"id":"st_11_C_7","name":"خالد علی حمە صالح احمد","phone":""},
+        {"id":"st_11_C_8","name":"دلین سۆران عابد محمد","phone":""},
+        {"id":"st_11_C_9","name":"دەریا حسێن عبدالجلیل خالد","phone":""},
+        {"id":"st_11_C_10","name":"ژیا صابر محمد أمین","phone":""},
+        {"id":"st_11_C_11","name":"شاد ئاکۆ عبدالله محمود","phone":""},
+        {"id":"st_11_C_12","name":"لاوی باوەڕ خلیل عبدالله","phone":""},
+        {"id":"st_11_C_13","name":"لاوی هێمن علی حسن","phone":""},
+        {"id":"st_11_C_14","name":"لیا فەرمان کریم فتاح","phone":""},
+        {"id":"st_11_C_15","name":"لێوان حکیم کریم محمد","phone":""},
+        {"id":"st_11_C_16","name":"لەوەند لطیف حسێن عبدالله","phone":""},
+        {"id":"st_11_C_17","name":"محمد گۆران ڕوستم أحمد","phone":""},
+        {"id":"st_11_C_18","name":"نالى ديلمان مصطفى أحمد","phone":""},
+        {"id":"st_11_C_19","name":"هه‌ناسه‌ چالاك صلاح شێرمحمد","phone":""},
+        {"id":"st_11_C_20","name":"هەنی دەروێش حسن فتاح","phone":""},
+        {"id":"st_11_C_21","name":"ڕەنو سیروان عبدالله عزیز","phone":""},
+        {"id":"st_11_C_22","name":"کارا یونس مجید حمە","phone":""}
+      ],
+      "grade_11_group_D":[
+        {"id":"st_11_D_0","name":"ئارسەر ئارام شریف کریم","phone":""},
+        {"id":"st_11_D_1","name":"ئارون توانا حمه‌على رشيد","phone":""},
+        {"id":"st_11_D_2","name":"ئاروین طه علی أبوبکر","phone":""},
+        {"id":"st_11_D_3","name":"ئانا ئاريان عارف أحمد","phone":""},
+        {"id":"st_11_D_4","name":"ئایە عثمان محمد غریب","phone":""},
+        {"id":"st_11_D_5","name":"ئیرا تێبین محمد عزیز","phone":""},
+        {"id":"st_11_D_6","name":"باکۆ پشتیوان عبدالقادر عارف","phone":""},
+        {"id":"st_11_D_7","name":"ته‌نيا گۆران كمال محمد","phone":""},
+        {"id":"st_11_D_8","name":"داریان دەریا نامیق شەریف","phone":""},
+        {"id":"st_11_D_9","name":"دیدەن غفور سعید احمد","phone":""},
+        {"id":"st_11_D_10","name":"سان أحمد حمەصالح أحمد","phone":""},
+        {"id":"st_11_D_11","name":"شاکۆ نەریمان کریم علی","phone":""},
+        {"id":"st_11_D_12","name":"شیاز نەریمان کریم علی","phone":""},
+        {"id":"st_11_D_13","name":"لاس هێمن محمد لطیف","phone":""},
+        {"id":"st_11_D_14","name":"لانۆ بەختیار کریم قادر","phone":""},
+        {"id":"st_11_D_15","name":"لاوەند دارکۆ بەرزان بکر","phone":""},
+        {"id":"st_11_D_16","name":"میری میران عثمان سعید","phone":""},
+        {"id":"st_11_D_17","name":"نالیا جمال محمد صالح","phone":""},
+        {"id":"st_11_D_18","name":"هه‌نى طارق فاروق انور","phone":""},
+        {"id":"st_11_D_19","name":"هۆزان چالاک طە مصطفی","phone":""},
+        {"id":"st_11_D_20","name":"هەژیر بێستون احمد .","phone":""},
+        {"id":"st_11_D_21","name":"ڕونیا محمد هدایت فرج","phone":""},
+        {"id":"st_11_D_22","name":"کانی بەرهەم عثمان اسماعیل","phone":""},
+        {"id":"st_11_D_23","name":"یارا ئاسۆ علی عبدالرحمن","phone":""}
+      ],
+      "grade_12_group_A":[
+        {"id":"st_12_A_0","name":"ئارا ابراهیم عبدالکریم محمد","phone":"07740825501"},
+        {"id":"st_12_A_1","name":"ئه‌له‌ند ئه‌رده‌ڵان أسماعیل خالد","phone":""},
+        {"id":"st_12_A_2","name":"داریا ڕێبین تۆفیق کریم","phone":""},
+        {"id":"st_12_A_3","name":"دییه‌ دلێر عثمان علی","phone":""},
+        {"id":"st_12_A_4","name":"زیوا ئاوات رسول فائق","phone":""},
+        {"id":"st_12_A_5","name":"سات هەلگورد ئاراز قادر","phone":""},
+        {"id":"st_12_A_6","name":"ساردۆنیا به‌رهه‌م سه‌ردار قادر","phone":""},
+        {"id":"st_12_A_7","name":"ساريا فريدون أحمد محمد","phone":""},
+        {"id":"st_12_A_8","name":"سارۆ ڕێبوار جەمال ئەشرەف","phone":""},
+        {"id":"st_12_A_9","name":"ساکۆ محمد عبداللە صالح","phone":""},
+        {"id":"st_12_A_10","name":"سیدره‌ باوه‌ڕ خلیل عبدالله","phone":""},
+        {"id":"st_12_A_11","name":"سیما سەریاس أبوبکر کریم","phone":""},
+        {"id":"st_12_A_12","name":"عبدالرحمن رائد عامر عبدالکریم","phone":""},
+        {"id":"st_12_A_13","name":"لاڤانا هۆشمەند خلیل ابوبکر","phone":""},
+        {"id":"st_12_A_14","name":"لەوەند ئامانج محمد قادر","phone":""},
+        {"id":"st_12_A_15","name":"لەوەند محمد صابر محى الدین","phone":""},
+        {"id":"st_12_A_16","name":"مادێنا ئارێز صلاح علی","phone":""},
+        {"id":"st_12_A_17","name":"هالین هەورامان معروف حمەامین","phone":""},
+        {"id":"st_12_A_18","name":"هانۆ هەرێم محمد محمود","phone":""},
+        {"id":"st_12_A_19","name":"هه‌نی قاره‌مان عبدالله‌ کریم","phone":""},
+        {"id":"st_12_A_20","name":"هەستی اکرم  محمود محمد","phone":""},
+        {"id":"st_12_A_21","name":"هەنى نەبەز على محمود","phone":""},
+        {"id":"st_12_A_22","name":"ڕاسا خۆر سیروان عمر","phone":""},
+        {"id":"st_12_A_23","name":"ڕه‌ز امید رضا محمد","phone":""},
+        {"id":"st_12_A_24","name":"ڤارين سه‌ردار عبدالباقى حمه‌غريب","phone":""},
+        {"id":"st_12_A_25","name":"کارا جمال عزیز رحیم","phone":""}
+      ],
+      "grade_12_group_B":[
+        {"id":"st_12_B_0","name":"ئارۆ بەهزاد ئەسعەد حسێن","phone":""},
+        {"id":"st_12_B_1","name":"ئاریا نجم الدین مجید مصطفی","phone":""},
+        {"id":"st_12_B_2","name":"ئایە محمد رزگار عبدول","phone":""},
+        {"id":"st_12_B_3","name":"ئیلیان علاءالدین مصطفى محمد","phone":""},
+        {"id":"st_12_B_4","name":"باڵا توانا حمه‌رؤوف محمد","phone":""},
+        {"id":"st_12_B_5","name":"بڵند قادر عبدالرحمن قادر","phone":""},
+        {"id":"st_12_B_6","name":"په‌ریا محمد علی أحمد","phone":""},
+        {"id":"st_12_B_7","name":"دانياڵ سه‌ركه‌وت غريب فرج","phone":""},
+        {"id":"st_12_B_8","name":"زەنگۆڵ ئاوات حمە فرج","phone":""},
+        {"id":"st_12_B_9","name":"ژه‌نیار سیروان جلال صالح","phone":""},
+        {"id":"st_12_B_10","name":"شەم دانا مەولود محمد","phone":""},
+        {"id":"st_12_B_11","name":"لازۆ ئاوات لطیف حمه‌أمین","phone":""},
+        {"id":"st_12_B_12","name":"ليا كارزان سعيد أبراهيم","phone":""},
+        {"id":"st_12_B_13","name":"محمد ناطق سعید أحمد","phone":""},
+        {"id":"st_12_B_14","name":"محمد وریا حسین عبدالعزیز","phone":""},
+        {"id":"st_12_B_15","name":"ناری عثمان عارف أحمد","phone":""},
+        {"id":"st_12_B_16","name":"نور سه‌ردار رشید حمه‌صالح","phone":""},
+        {"id":"st_12_B_17","name":"نڤار عثمان عارف أحمد","phone":""},
+        {"id":"st_12_B_18","name":"هه‌رمێ توانا جبار أمین","phone":""},
+        {"id":"st_12_B_19","name":"ڕامان عثمان عارف عزيز","phone":""},
+        {"id":"st_12_B_20","name":"ڕۆزیا ئاریان عبدالله‌ محمدصالح","phone":""},
+        {"id":"st_12_B_21","name":"ڕەوا زانا نورى حمەلاو","phone":""},
+        {"id":"st_12_B_22","name":"ڤاناس به‌ختیار محمد محمود","phone":""},
+        {"id":"st_12_B_23","name":"کیژە هاوبەش ماجید نوری","phone":""},
+        {"id":"st_12_B_24","name":"یارا کردار عبدالکریم مارف","phone":""}
+      ],
+      "grade_12_group_C":[
+        {"id":"st_12_C_0","name":"ئارین ئازاد عبدول خوارحم","phone":""},
+        {"id":"st_12_C_1","name":"ئارین ئەحمەد حسن .","phone":""},
+        {"id":"st_12_C_2","name":"ئیناس زه‌رده‌شت مهدی أحمد","phone":""},
+        {"id":"st_12_C_3","name":"باریشا عمر طه‌ علی","phone":""},
+        {"id":"st_12_C_4","name":"بانو ولید یونس رحیم","phone":""},
+        {"id":"st_12_C_5","name":"ژیار جمال حارس محمد","phone":""},
+        {"id":"st_12_C_6","name":"سندوس سيروان أبراهيم حمه‌مصطفى","phone":""},
+        {"id":"st_12_C_7","name":"سەروەند کریم توفیق گورون","phone":""},
+        {"id":"st_12_C_8","name":"شه‌م عثمان محمد رمزى","phone":""},
+        {"id":"st_12_C_9","name":"شۆخى فاضل أحمد عبدالكريم","phone":""},
+        {"id":"st_12_C_10","name":"لاوی کامه‌ران حسن عزیز","phone":""},
+        {"id":"st_12_C_11","name":"لایه‌ هیوا أحمد حمه‌عزیز","phone":""},
+        {"id":"st_12_C_12","name":"ماند حسین محمود أحمد","phone":""},
+        {"id":"st_12_C_13","name":"محمد چيا رفعت حسن","phone":""},
+        {"id":"st_12_C_14","name":"محمد صدیق عزیز بهاءالدین","phone":""},
+        {"id":"st_12_C_15","name":"میر زەردەشت لطیف مجید","phone":""},
+        {"id":"st_12_C_16","name":"نزا هه‌ڵکه‌وت عثمان محمد","phone":""},
+        {"id":"st_12_C_17","name":"نوێکار به‌ختیار عمـر سعید","phone":""},
+        {"id":"st_12_C_18","name":"نیما خالد عبدالرحمن محمد","phone":""},
+        {"id":"st_12_C_19","name":"هه‌نار هاوکار هه‌ژار أحمد","phone":""},
+        {"id":"st_12_C_20","name":"هه‌ورام هێمن محمد عثمان","phone":""},
+        {"id":"st_12_C_21","name":"ڕێژوان ڕێبوار محمد فرج","phone":""},
+        {"id":"st_12_C_22","name":"ڤارۆ کارزان محمد علی","phone":""},
+        {"id":"st_12_C_23","name":"ڤیار رسول طالب حمه‌تۆفیق","phone":""},
+        {"id":"st_12_C_24","name":"کارا محمد علی صالح","phone":""},
+        {"id":"st_12_C_25","name":"کاردینا فەریق علی غەریب","phone":""}
+      ],
+      "grade_12_group_D":[
+        {"id":"st_12_D_0","name":"ئارۆ به‌ختیار صالح عبدالرحمن","phone":""},
+        {"id":"st_12_D_1","name":"ئارۆس دلیر ابراهیم فرج","phone":""},
+        {"id":"st_12_D_2","name":"ئارین شادمان عثمان صدیق","phone":""},
+        {"id":"st_12_D_3","name":"ئانيا دانا أحمد محمود","phone":""},
+        {"id":"st_12_D_4","name":"ئانیا عبداللە عمر فتاح","phone":""},
+        {"id":"st_12_D_5","name":"بابۆ ئاسۆ عبدالله عبدالرحمن","phone":""},
+        {"id":"st_12_D_6","name":"دانیاڵ علی مهدی حمه‌ڕشید","phone":""},
+        {"id":"st_12_D_7","name":"ژووان شۆڕش باقی عبدالله","phone":""},
+        {"id":"st_12_D_8","name":"ژیر کارزان عمر صالح","phone":""},
+        {"id":"st_12_D_9","name":"ژێنەر عمر صابر رشید","phone":""},
+        {"id":"st_12_D_10","name":"ساريا جمال رسوڵ لطيف","phone":""},
+        {"id":"st_12_D_11","name":"لەند محمد علی عبدالرحمن","phone":""},
+        {"id":"st_12_D_12","name":"محمد بکر حمه‌صدیق سعید","phone":""},
+        {"id":"st_12_D_13","name":"محمد فرمان کریم فتاح","phone":""},
+        {"id":"st_12_D_14","name":"میر سۆران خەسرەو عارف","phone":""},
+        {"id":"st_12_D_15","name":"میر نەژاد عارف عزیز","phone":""},
+        {"id":"st_12_D_16","name":"نڤار هۆگر محمد توفيق","phone":""},
+        {"id":"st_12_D_17","name":"هامنۆ کاروان کریم ده‌روێش","phone":""},
+        {"id":"st_12_D_18","name":"هایما به‌هرۆز نیازی أسکندر","phone":""},
+        {"id":"st_12_D_19","name":"هێور ولید خلیل حامد","phone":""},
+        {"id":"st_12_D_20","name":"هەناسە رحیم احمد امین","phone":""},
+        {"id":"st_12_D_21","name":"ياران ديارى حمه‌رشيد فرج","phone":""},
+        {"id":"st_12_D_22","name":"کیانوش شرام یاسین عبدالرحمن","phone":""},
+        {"id":"st_12_D_23","name":"کەڤی ئالان فایەق عبدالقادر","phone":""},
+        {"id":"st_12_D_24","name":"یاد عبدالصمد حسین محمد","phone":""}
+      ],
+      "grade_12_group_E":[
+        {"id":"st_12_E_0","name":"ئارۆ نه‌وزاد رشید کریم","phone":""},
+        {"id":"st_12_E_1","name":"ئانیا أبوبکر محمد أبراهیم","phone":""},
+        {"id":"st_12_E_2","name":"أحمد أبراهیم حمە رحیم رسول","phone":""},
+        {"id":"st_12_E_3","name":"ئۆسلیڤان پێرس محمد سعید","phone":""},
+        {"id":"st_12_E_4","name":"ئەرینا رزگار حسین محمد","phone":""},
+        {"id":"st_12_E_5","name":"ئەرێز جوتیار محمد صالح أحمد","phone":""},
+        {"id":"st_12_E_6","name":"ئەلەند ئاراز صابر حمە ڕەسول","phone":""},
+        {"id":"st_12_E_7","name":"اوس ازاد موفق نجيب","phone":""},
+        {"id":"st_12_E_8","name":"دابان محمود أحمد مارف","phone":""},
+        {"id":"st_12_E_9","name":"داریان سەلام مارف فەتاح","phone":""},
+        {"id":"st_12_E_10","name":"دینا جمیل جلال أحمد","phone":""},
+        {"id":"st_12_E_11","name":"لاریسا ئه‌فراسیاب مصطفی ڕشید","phone":""},
+        {"id":"st_12_E_12","name":"لازۆ طارق علی عبدالله","phone":""},
+        {"id":"st_12_E_13","name":"لازە ئاوات کمال سعید","phone":""},
+        {"id":"st_12_E_14","name":"لانۆ طاهر عبدالله محمد","phone":""},
+        {"id":"st_12_E_15","name":"لەنیا لطیف عبدول محمد","phone":""},
+        {"id":"st_12_E_16","name":"ميهران فلاح سليم محمود","phone":""},
+        {"id":"st_12_E_17","name":"مینۆ مەزن سالار محمد","phone":""},
+        {"id":"st_12_E_18","name":"هەنی توانا محمد سەروەت","phone":""},
+        {"id":"st_12_E_19","name":"ڕاهۆز ئامانج رؤوف حمە","phone":""},
+        {"id":"st_12_E_20","name":"ڕەوەز بەهادین أحمد محسن","phone":""},
+        {"id":"st_12_E_21","name":"کانى چێنەر یاسین احمد","phone":""},
+        {"id":"st_12_E_22","name":"کانی ئاوات محمود مارف","phone":""},
+        {"id":"st_12_E_23","name":"کۆژیار کامەران علی سعید","phone":""},
+        {"id":"st_12_E_24","name":"کۆژین هێرش عبدالله عزیز","phone":""}
+      ],
+      "grade_12_group_F":[
+        {"id":"st_12_F_0","name":"ئارا نه‌وزاد محمد نوری","phone":"07740825501"},
+        {"id":"st_12_F_1","name":"ئاروەند علی عثمان محمد","phone":""},
+        {"id":"st_12_F_2","name":"ئارۆ ئازاد عبدول خوارحم","phone":""},
+        {"id":"st_12_F_3","name":"ئاریا به‌ختیار عبدالله صالح","phone":""},
+        {"id":"st_12_F_4","name":"ئالین هەژار معروف قادر","phone":""},
+        {"id":"st_12_F_5","name":"ئامێز بەرهەم شهاب الدین أحمد","phone":""},
+        {"id":"st_12_F_6","name":"ئانیا بەهنام عبدالله محمد","phone":""},
+        {"id":"st_12_F_7","name":"ئەرین کاروان محمد أحمد","phone":""},
+        {"id":"st_12_F_8","name":"باوان أحمد نوری ڕشید","phone":""},
+        {"id":"st_12_F_9","name":"داناز جمال رحیم حمە","phone":""},
+        {"id":"st_12_F_10","name":"ژیر نەژاد عارف عزیز","phone":""},
+        {"id":"st_12_F_11","name":"ژیلا نەوشیروان میرأحمد حامد","phone":""},
+        {"id":"st_12_F_12","name":"سارینا سه‌ردار غفور کریم","phone":""},
+        {"id":"st_12_F_13","name":"ساڤۆ طه أحمد محمد","phone":""},
+        {"id":"st_12_F_14","name":"علی ظاهر کریم معروف","phone":""},
+        {"id":"st_12_F_15","name":"لانی دیاری أحمد معروف","phone":""},
+        {"id":"st_12_F_16","name":"لاڤین شۆڕش صابر فتاح","phone":""},
+        {"id":"st_12_F_17","name":"نژۆ علاء حسێن سعدون","phone":""},
+        {"id":"st_12_F_18","name":"هێنەر محمد صدیق نامق","phone":""},
+        {"id":"st_12_F_19","name":"ڕامان ئاوات أحمد عزیز","phone":""},
+        {"id":"st_12_F_20","name":"ڕامان شاخەوان أبراهیم حمە","phone":""},
+        {"id":"st_12_F_21","name":"ڕاوێژ حسن محمدصاڵح حسن","phone":""},
+        {"id":"st_12_F_22","name":"ڕه‌ندی هادی حمه‌رضا عزیز","phone":""},
+        {"id":"st_12_F_23","name":"یادی کەیوان جزا غریب","phone":""}
+      ]
+    };
+
+    var defaultSubjects = [
+      { id: "kurdish", name: "📕 Kurdish (کوردی)", grades: [10, 11, 12], p1Pass: "10112001", p2Pass: "10112002" },
+      { id: "arabic", name: "📗 Arabic (عەرەبی)", grades: [10, 11, 12], p1Pass: "20223001", p2Pass: "20223002" },
+      { id: "english", name: "📘 English (ئینگلیزی)", grades: [10, 11, 12], p1Pass: "30334001", p2Pass: "30334002" },
+      { id: "math", name: "📐 Mathematics (بیرکاری)", grades: [10, 11, 12], p1Pass: "40445001", p2Pass: "40445002" },
+      { id: "physics", name: "⚡ Physics (فیزیا)", grades: [10, 11, 12], p1Pass: "50556001", p2Pass: "50556002" },
+      { id: "chemistry", name: "🧪 Chemistry (کیمیا)", grades: [10, 11, 12], p1Pass: "60667001", p2Pass: "60667002" },
+      { id: "biology", name: "🧬 Biology (زیندەزانی)", grades: [10, 11, 12], p1Pass: "70778001", p2Pass: "70778002" },
+      { id: "islamic", name: "🕌 Islamic (ئیسلامی)", grades: [10, 11, 12], p1Pass: "80889001", p2Pass: "80889002" },
+      { id: "art", name: "🎨 Art (هونەر)", grades: [10, 11, 12], p1Pass: "12121001", p2Pass: "12121002" },
+      { id: "hr", name: "⚖️ H.R. (ماف)", grades: [10], p1Pass: "13131001", p2Pass: "13131002" },
+      { id: "it", name: "💻 IT (کۆمپیوتەر)", grades: [10, 11], p1Pass: "90990001", p2Pass: "90990002" },
+      { id: "sport", name: "🏅 Sport (وەرزش)", grades: [10, 12], p1Pass: "14141001", p2Pass: "14141002" },
+      { id: "pe", name: "⚽ P.E. (وەرزش)", grades: [11], p1Pass: "11223301", p2Pass: "11223302" }
+    ];
+
+    var state = {
+      activeTab: "daily",
+      grade: 12,
+      group: "F",
+      date: new Date().toISOString().slice(0, 10),
+      dayOfWeek: "Sun",
+      currentSessionSubject: "physics",
+      currentSessionTeacherSlot: 1,
+      isLoggedInAsPrincipal: false,
+      role: "teacher",
+      customLogo: "",
+      rosters: {},
+      dailyRecords: {},
+      weeklyRecords: {},
+      teacherConfigs: {},
+      lockedLessons: {},
+      submittedReports: []
+    };
+
+    function initApp() {
+      // 1. Seed rosters with complete embedded lists
+      state.rosters = JSON.parse(JSON.stringify(INITIAL_EMBEDDED_ROSTERS));
+
+      // 2. Overlay any modifications from local storage
+      loadStateFromStorage();
+      ensureTeacherConfigs();
+
+      var dateInp = document.getElementById("attendanceDateInput");
+      if (dateInp) dateInp.value = state.date;
+
+      renderGradeAndGroupButtons();
+      renderSubjectsGrid();
+      renderPopulatedClassesBanner();
+      renderDailyTable();
+
+      // 3. Sync with Supabase in the background
+      initSupabaseSync();
+    }
+
+    async function initSupabaseSync() {
+      if (!supabaseClient) return;
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('app_state')
+          .select('data')
+          .eq('id', 'kec_main_state')
+          .single();
+
+        if (data && data.data && data.data.rosters && Object.keys(data.data.rosters).length > 0) {
+          // Merge remote rosters with local rosters
+          Object.assign(state, data.data);
+          saveStateToStorage();
+          renderDailyTable();
+          renderPopulatedClassesBanner();
+          showToast("☁️ داتاکان لەگەڵ Supabase نوێکرانەوە");
+        } else {
+          // If remote is empty, seed Supabase with our rosters
+          pushStateToSupabase(true);
+        }
+      } catch (err) {
+        console.error("Supabase sync:", err);
+      }
+
+      // Realtime listener
+      supabaseClient
+        .channel('live-kec-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'app_state', filter: 'id=eq.kec_main_state' }, (payload) => {
+          if (payload.new && payload.new.data) {
+            Object.assign(state, payload.new.data);
+            if (state.activeTab === "daily") renderDailyTable();
+            if (state.activeTab === "weekly") renderWeeklyTable();
+            renderPopulatedClassesBanner();
+          }
+        })
+        .subscribe();
+    }
+
+    let pushTimer = null;
+    function pushStateToSupabase(immediate = false) {
+      if (!supabaseClient) return;
+      clearTimeout(pushTimer);
+      pushTimer = setTimeout(async () => {
+        try {
+          await supabaseClient
+            .from('app_state')
+            .upsert({
+              id: 'kec_main_state',
+              data: state,
+              updated_at: new Date().toISOString()
+            });
+        } catch (e) {
+          console.error("Failed to push:", e);
+        }
+      }, immediate ? 50 : 600);
+    }
+
+    function cloudSyncUp() {
+      saveStateToStorage();
+      pushStateToSupabase(true);
+      showToast("⬆️ هەموو ناوەکان لە Supabase سەیڤ کران");
+    }
+
+    function cloudSyncDown() {
+      initSupabaseSync();
+    }
+
+    function saveStateToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(VAULT_ROSTERS_KEY, JSON.stringify(state.rosters));
+        pushStateToSupabase();
+      } catch (e) {}
+    }
+
+    function loadStateFromStorage() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === "object") {
+            if (parsed.rosters && Object.keys(parsed.rosters).length > 0) {
+              state.rosters = parsed.rosters;
+            }
+            if (parsed.dailyRecords) state.dailyRecords = parsed.dailyRecords;
+            if (parsed.weeklyRecords) state.weeklyRecords = parsed.weeklyRecords;
+            if (parsed.teacherConfigs) state.teacherConfigs = parsed.teacherConfigs;
+            if (parsed.grade) state.grade = parsed.grade;
+            if (parsed.group) state.group = parsed.group;
+          }
+        }
+      } catch (e) {}
+    }
+
+    function ensureTeacherConfigs() {
+      defaultSubjects.forEach(function(sub) {
+        if (!state.teacherConfigs[sub.id]) {
+          state.teacherConfigs[sub.id] = {
+            p1Pass: sub.p1Pass,
+            p2Pass: sub.p2Pass,
+            p1Groups: ["A", "B", "C"],
+            p2Groups: ["D", "E", "F"]
+          };
+        }
+      });
+    }
+
+    function showToast(msg) {
+      var toast = document.getElementById("toastNotification");
+      var text = document.getElementById("toastText");
+      if (!toast || !text) return;
+      text.textContent = msg;
+      toast.classList.remove("opacity-0");
+      toast.classList.add("opacity-100");
+      setTimeout(function() {
+        toast.classList.remove("opacity-100");
+        toast.classList.add("opacity-0");
+      }, 2600);
+    }
+
+    function switchTab(tabId) {
+      if (tabId === "admin" && !state.isLoggedInAsPrincipal) {
+        openPrincipalModal();
+        return;
+      }
+      state.activeTab = tabId;
+      saveStateToStorage();
+      ['subjects', 'daily', 'weekly', 'admin'].forEach(function(t) {
+        var el = document.getElementById("section-" + t);
+        var tabEl = document.getElementById("tab-" + t);
+        if (t === tabId) {
+          if (el) el.classList.remove("hidden");
+          if (tabEl) tabEl.classList.add("active");
+        } else {
+          if (el) el.classList.add("hidden");
+          if (tabEl) tabEl.classList.remove("active");
+        }
+      });
+
+      if (tabId === "daily") renderDailyTable();
+      if (tabId === "weekly") renderWeeklyTable();
+    }
+
+    function selectGrade(g) {
+      state.grade = g;
+      saveStateToStorage();
+      renderGradeAndGroupButtons();
+      renderSubjectsGrid();
+      renderPopulatedClassesBanner();
+      if (state.activeTab === "daily") renderDailyTable();
+      if (state.activeTab === "weekly") renderWeeklyTable();
+    }
+
+    function selectGroup(grp) {
+      state.group = grp;
+      saveStateToStorage();
+      renderGradeAndGroupButtons();
+      renderSubjectsGrid();
+      renderPopulatedClassesBanner();
+      if (state.activeTab === "daily") renderDailyTable();
+      if (state.activeTab === "weekly") renderWeeklyTable();
+    }
+
+    function renderGradeAndGroupButtons() {
+      [10, 11, 12].forEach(function(g) {
+        var btn = document.getElementById("gradeBtn" + g);
+        if (!btn) return;
+        btn.className = state.grade === g 
+          ? "px-4 py-2 rounded-xl text-xs font-extrabold bg-slate-900 text-white shadow"
+          : "px-4 py-2 rounded-xl text-xs font-extrabold bg-slate-200 text-slate-700 hover:bg-slate-300";
+      });
+
+      ALL_GROUPS.forEach(function(grp) {
+        var btn = document.getElementById("groupBtn" + grp);
+        if (!btn) return;
+        btn.className = state.group === grp
+          ? "w-9 h-9 rounded-xl font-extrabold text-xs bg-amber-500 text-slate-950 shadow"
+          : "w-9 h-9 rounded-xl font-extrabold text-xs bg-slate-200 text-slate-700";
+      });
+
+      var badge = document.getElementById("teacherSlotInfoBadge");
+      if (badge) badge.textContent = "پۆلی " + state.grade + " | گروپی " + state.group;
+    }
+
+    function renderSubjectsGrid() {
+      var grid = document.getElementById("subjectsGrid");
+      if (!grid) return;
+      grid.innerHTML = "";
+      var subjects = defaultSubjects.filter(sub => sub.grades.includes(state.grade));
+
+      subjects.forEach(function(sub) {
+        var card = document.createElement("div");
+        card.className = "bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col justify-between gap-3";
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-sm font-extrabold text-slate-900">${sub.name}</h3>
+              <span class="text-[10px] bg-slate-100 text-slate-700 px-2 py-1 rounded-lg font-bold">پۆلی ${state.grade}</span>
+            </div>
+            <div class="flex gap-2 mt-3">
+              <button onclick="promptTeacherLogin('${sub.id}', 1)" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl text-xs font-extrabold shadow">👨‍🏫 مامۆستای ١</button>
+              <button onclick="promptTeacherLogin('${sub.id}', 2)" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-2 rounded-xl text-xs font-extrabold shadow">👩‍🏫 مامۆستای ٢</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    var pendingLoginSubject = "physics";
+    var pendingLoginTeacherSlot = 1;
+
+    function promptTeacherLogin(subjectId, slot) {
+      if (state.isLoggedInAsPrincipal) {
+        openTeacherSession(subjectId, slot);
+        return;
+      }
+      pendingLoginSubject = subjectId;
+      pendingLoginTeacherSlot = slot;
+      document.getElementById("modalSubjectTitle").textContent = subjectId + " — مامۆستای " + slot;
+      document.getElementById("loginPasswordInput").value = "";
+      document.getElementById("passwordModal").classList.add("show");
+    }
+
+    function closePasswordModal() {
+      document.getElementById("passwordModal").classList.remove("show");
+    }
+
+    function submitPasswordLogin() {
+      var pass = document.getElementById("loginPasswordInput").value.trim();
+      var cfg = state.teacherConfigs[pendingLoginSubject];
+      var correctPass = pendingLoginTeacherSlot === 1 ? cfg.p1Pass : cfg.p2Pass;
+
+      if (pass === correctPass || pass === "2013") {
+        closePasswordModal();
+        openTeacherSession(pendingLoginSubject, pendingLoginTeacherSlot);
+        showToast("✅ بە سەرکەوتوویی داخڵ بوویت");
+      } else {
+        showToast("❌ پاسۆرد هەڵەیە!");
+      }
+    }
+
+    function openTeacherSession(subjectId, slot) {
+      state.currentSessionSubject = subjectId;
+      state.currentSessionTeacherSlot = slot;
+      saveStateToStorage();
+      switchTab("daily");
+    }
+
+    function getRosterKey() {
+      return "grade_" + state.grade + "_group_" + state.group;
+    }
+
+    function getDailyKey() {
+      return getRosterKey() + "_" + state.date + "_" + (state.currentSessionSubject || "physics");
+    }
+
+    function addNewStudentAction() {
+      var nameInput = document.getElementById("newStudentNameInput");
+      var phoneInput = document.getElementById("newStudentPhoneInput");
+      var name = nameInput.value.trim();
+      var phone = phoneInput.value.trim();
+
+      if (!name) return;
+
+      var rKey = getRosterKey();
+      if (!state.rosters[rKey]) state.rosters[rKey] = [];
+
+      state.rosters[rKey].push({
+        id: "st_" + Date.now(),
+        name: name,
+        phone: phone
+      });
+
+      nameInput.value = "";
+      phoneInput.value = "";
+      saveStateToStorage();
+      renderDailyTable();
+      renderPopulatedClassesBanner();
+      showToast("✅ خوێندکار زیادکرا و سەیڤ کرا");
+    }
+
+    function renderDailyTable() {
+      var tbody = document.getElementById("dailyTableBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      var rKey = getRosterKey();
+      var students = state.rosters[rKey] || [];
+      document.getElementById("dailyStudentCountBadge").textContent = students.length + " خوێندکار";
+
+      var subObj = defaultSubjects.find(s => s.id === state.currentSessionSubject);
+      var subName = subObj ? subObj.name : state.currentSessionSubject;
+      document.getElementById("dailyTableTitle").textContent = "تۆماری ڕۆژانە — پۆلی " + state.grade + " (" + state.group + ") — " + subName;
+      document.getElementById("activeTeacherBadge").textContent = subName + " | پۆلی " + state.grade + "-" + state.group;
+
+      var dKey = getDailyKey();
+      if (!state.dailyRecords[dKey]) state.dailyRecords[dKey] = {};
+      var records = state.dailyRecords[dKey];
+
+      var counts = { P: 0, L: 0, E: 0, A: 0, S: 0 };
+
+      if (students.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500 font-bold">هیچ خوێندکارێک لە پۆلی ${state.grade} - گروپی ${state.group} نییە. تکایە لە شریتە زەردەکەی سەرەوە ئەو گروپە هەڵبژێرە کە خوێندکارەکانی تێدایە.</td></tr>`;
+        updateCountersUI(counts);
+        return;
+      }
+
+      students.forEach(function(st, idx) {
+        if (!records[st.id]) records[st.id] = { status: "P", note: "" };
+        var stRec = records[st.id];
+        if (counts[stRec.status] !== undefined) counts[stRec.status]++;
+
+        var tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition-colors";
+        tr.innerHTML = `
+          <td class="p-3 text-center font-mono font-bold">${idx + 1}</td>
+          <td class="p-3 font-extrabold text-slate-900">${st.name}</td>
+          <td class="p-3 font-mono text-[11px]">${st.phone || '—'}</td>
+          <td class="p-3 text-center">
+            <div class="inline-flex flex-wrap justify-center gap-1 bg-slate-100 p-1 rounded-xl">
+              <button onclick="setStatus('${st.id}', 'P')" class="status-btn ${stRec.status === 'P' ? 'active-P' : ''}">✅ ئامادە</button>
+              <button onclick="setStatus('${st.id}', 'L')" class="status-btn ${stRec.status === 'L' ? 'active-L' : ''}">⏰ درەنگ</button>
+              <button onclick="setStatus('${st.id}', 'E')" class="status-btn ${stRec.status === 'E' ? 'active-E' : ''}">📝 مۆڵەت</button>
+              <button onclick="setStatus('${st.id}', 'A')" class="status-btn ${stRec.status === 'A' ? 'active-A' : ''}">❌ غیاب</button>
+            </div>
+          </td>
+          <td class="p-3 text-center text-[11px] text-slate-500">${stRec.note || '—'}</td>
+          <td class="p-3 text-center">
+            <button onclick="deleteStudent('${st.id}')" class="text-red-500 hover:text-red-700 font-bold text-xs p-1">🗑️</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      updateCountersUI(counts);
+    }
+
+    function setStatus(studentId, status) {
+      var dKey = getDailyKey();
+      if (!state.dailyRecords[dKey]) state.dailyRecords[dKey] = {};
+      state.dailyRecords[dKey][studentId] = { status: status, note: "" };
+      
+      var wKey = getRosterKey() + "_" + (state.currentSessionSubject || "physics");
+      if (!state.weeklyRecords[wKey]) state.weeklyRecords[wKey] = {};
+      if (!state.weeklyRecords[wKey][studentId]) state.weeklyRecords[wKey][studentId] = {};
+      state.weeklyRecords[wKey][studentId][state.dayOfWeek] = status;
+
+      saveStateToStorage();
+      renderDailyTable();
+    }
+
+    function deleteStudent(studentId) {
+      var rKey = getRosterKey();
+      if (!state.rosters[rKey]) return;
+      state.rosters[rKey] = state.rosters[rKey].filter(st => st.id !== studentId);
+      saveStateToStorage();
+      renderDailyTable();
+      renderPopulatedClassesBanner();
+    }
+
+    function updateCountersUI(counts) {
+      var ids = { P: "countPresent", L: "countLate", E: "countExcused", A: "countAbsent", S: "countSentOut" };
+      Object.keys(ids).forEach(k => {
+        var el = document.getElementById(ids[k]);
+        if (el) el.textContent = counts[k] || 0;
+      });
+    }
+
+    function renderWeeklyTable() {
+      var tbody = document.getElementById("weeklyTableBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      var rKey = getRosterKey();
+      var students = state.rosters[rKey] || [];
+      var days = ["Sun", "Mon", "Tue", "Wed", "Thu"];
+      var wKey = rKey + "_" + (state.currentSessionSubject || "physics");
+
+      students.forEach(function(st, idx) {
+        var cells = days.map(function(d) {
+          var s = (state.weeklyRecords[wKey] && state.weeklyRecords[wKey][st.id] && state.weeklyRecords[wKey][st.id][d]) || "P";
+          return `<td class="p-3 text-center font-bold text-xs">${s}</td>`;
+        }).join("");
+
+        var tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition-colors";
+        tr.innerHTML = `
+          <td class="p-3 text-center font-mono font-bold">${idx + 1}</td>
+          <td class="p-3 font-extrabold text-slate-900">${st.name}</td>
+          ${cells}
+          <td class="p-3 text-center">
+            <button onclick="sendWeeklyWhatsApp('${st.id}')" class="bg-emerald-600 text-white px-3 py-1 rounded-lg text-xs font-bold">📲 وەتسئەپ</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function sendWeeklyWhatsApp(studentId) {
+      var rKey = getRosterKey();
+      var st = (state.rosters[rKey] || []).find(s => s.id === studentId);
+      if (!st || !st.phone) {
+        showToast("❌ ژمارەی بەخێوکار نییە!");
+        return;
+      }
+      var cleanPhone = st.phone.replace(/[^0-9]/g, "");
+      if (cleanPhone.startsWith("07")) cleanPhone = "964" + cleanPhone.slice(1);
+      var text = `🏫 KEC Sulaimanyeh\nئاگاداری ئامادەبوونی خوێندکار: ${st.name}\nپۆلی ${state.grade}-${state.group}`;
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`, "_blank");
+    }
+
+    function renderPopulatedClassesBanner() {
+      var banner = document.getElementById("populatedClassesBanner");
+      var listDiv = document.getElementById("populatedClassesList");
+      if (!banner || !listDiv) return;
+      listDiv.innerHTML = "";
+
+      var keys = Object.keys(state.rosters).sort();
+      var hasAny = false;
+      keys.forEach(function(key) {
+        if (state.rosters[key] && state.rosters[key].length > 0) {
+          hasAny = true;
+          var parts = key.split("_");
+          var g = parts[1];
+          var grp = parts[3];
+          var isCurrent = (parseInt(g) === state.grade && grp === state.group);
+          var btn = document.createElement("button");
+          btn.className = isCurrent 
+            ? "bg-slate-900 text-amber-400 px-3 py-1 rounded-lg text-xs font-extrabold shadow"
+            : "bg-amber-200 hover:bg-amber-300 text-amber-900 px-2.5 py-1 rounded-lg text-xs font-extrabold";
+          btn.textContent = `پۆلی ${g} - گروپ ${grp} (${state.rosters[key].length})`;
+          btn.onclick = function() {
+            state.grade = parseInt(g);
+            state.group = grp;
+            saveStateToStorage();
+            renderGradeAndGroupButtons();
+            renderSubjectsGrid();
+            renderPopulatedClassesBanner();
+            if (state.activeTab === "daily") renderDailyTable();
+            if (state.activeTab === "weekly") renderWeeklyTable();
+          };
+          listDiv.appendChild(btn);
+        }
+      });
+      banner.classList.toggle("hidden", !hasAny);
+    }
+
+    function openPrincipalModal() {
+      document.getElementById("principalModal").classList.add("show");
+    }
+    function closePrincipalModal() {
+      document.getElementById("principalModal").classList.remove("show");
+    }
+    function submitPrincipalLogin() {
+      var val = document.getElementById("principalPasswordInput").value.trim();
+      if (val === "2013" || val.toUpperCase() === "KEC@2013") {
+        state.isLoggedInAsPrincipal = true;
+        closePrincipalModal();
+        switchTab("daily");
+        showToast("👑 بە سەرکەوتوویی وەک بەڕێوەبەر داخڵ بوویت");
+      } else {
+        showToast("❌ کۆدی نهێنی هەڵەیە!");
+      }
+    }
+    function logoutPrincipalRole() {
+      state.isLoggedInAsPrincipal = false;
+      switchTab("daily");
+    }
+    function onDateChange(v) { state.date = v; saveStateToStorage(); renderDailyTable(); }
+    function onDayOfWeekChange(v) { state.dayOfWeek = v; saveStateToStorage(); renderDailyTable(); }
+    function markAllPresentAction() {
+      var rKey = getRosterKey();
+      (state.rosters[rKey] || []).forEach(st => setStatus(st.id, 'P'));
+    }
+  </script>
+</body>
+</html>
