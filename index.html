@@ -9,7 +9,6 @@
   <title>KEC Sulaimanyeh Attendance System — Ms: Suhaila Ali</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
@@ -127,14 +126,13 @@
         </div>
         <div>
           <h1 class="text-lg md:text-xl font-extrabold tracking-tight text-white">Kurdistan Educational Compound / Sulaimanyeh</h1>
-          <p class="text-xs text-amber-400 font-bold">(KEC - EST. 2013) • بەڕێوەبەر: <span id="headerPrincipalName">Ms: Suhaila Ali</span> <span id="roleStatusBadge" class="bg-white/15 text-white px-2 py-0.5 rounded-full text-[10px] mr-1">👨‍🏫 دۆخی مامۆستا</span> <span id="cloudLiveBadge" class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full text-[10px] mr-1">⚡ Supabase Live</span></p>
+          <p class="text-xs text-amber-400 font-bold">(KEC - EST. 2013) • بەڕێوەبەر: <span id="headerPrincipalName">Ms: Suhaila Ali</span> <span id="roleStatusBadge" class="bg-white/15 text-white px-2 py-0.5 rounded-full text-[10px] mr-1">👨‍🏫 دۆخی مامۆستا</span> <span id="cloudLiveBadge" class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full text-[10px] mr-1">⚡ Firebase Live</span></p>
         </div>
       </div>
       <div class="flex flex-wrap items-center justify-center gap-1.5">
         <button onclick="openPrincipalModal()" id="principalHeaderBtn" class="pill-btn bg-amber-500 text-slate-950 hover:bg-amber-400 font-extrabold shadow">👑 بەڕێوەبەر / ڕێپێدراو</button>
         <button onclick="logoutPrincipalRole()" id="logoutPrincipalBtn" class="pill-btn bg-red-600 text-white hover:bg-red-500 hidden">🚪 دەرچوون</button>
-        <button onclick="cloudSyncUp()" class="pill-btn bg-blue-600 text-white hover:bg-blue-500">⬆️ سەیڤکردن لە Supabase</button>
-        <button onclick="cloudSyncDown()" class="pill-btn bg-sky-600 text-white hover:bg-sky-500">⬇️ نوێکردنەوە لە Supabase</button>
+        <button onclick="cloudSyncUp()" class="pill-btn bg-blue-600 text-white hover:bg-blue-500">⬆️ سەیڤکردن لە سێرڤەر</button>
       </div>
     </div>
   </header>
@@ -349,26 +347,83 @@
     </div>
   </div>
 
+  <!-- FIREBASE REALTIME DATABASE INITIALIZATION -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC2l_fjB_tUMdpd7zUWBGUU2Ie4hd-WJ4A",
+      authDomain: "school-attendance-73624.firebaseapp.com",
+      databaseURL: "https://school-attendance-73624-default-rtdb.firebaseio.com",
+      projectId: "school-attendance-73624",
+      storageBucket: "school-attendance-73624.firebasestorage.app",
+      messagingSenderId: "401743545726",
+      appId: "1:401743545726:web:2194ad7d9fcaf5d0191f2f",
+      measurementId: "G-H5RGETN618"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const stateRef = ref(db, 'attendance_state');
+
+    let isInternalUpdate = false;
+
+    // Listen in real-time for changes across all devices
+    onValue(stateRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        if (isInternalUpdate) {
+          isInternalUpdate = false;
+          return;
+        }
+
+        if (data.rosters && Object.keys(data.rosters).length > 0) {
+          window.state.rosters = data.rosters;
+        }
+        if (data.dailyRecords) window.state.dailyRecords = data.dailyRecords;
+        if (data.weeklyRecords) window.state.weeklyRecords = data.weeklyRecords;
+        if (data.teacherConfigs) window.state.teacherConfigs = data.teacherConfigs;
+
+        try {
+          localStorage.setItem(window.STORAGE_KEY, JSON.stringify(window.state));
+        } catch(e) {}
+
+        if (window.state.activeTab === "daily") window.renderDailyTable();
+        if (window.state.activeTab === "weekly") window.renderWeeklyTable();
+        window.renderPopulatedClassesBanner();
+      } else {
+        // Initial first push if database is completely empty
+        window.pushStateToFirebase(true);
+      }
+    });
+
+    let syncTimer = null;
+    window.pushStateToFirebase = function(immediate = false) {
+      clearTimeout(syncTimer);
+      syncTimer = setTimeout(async () => {
+        try {
+          isInternalUpdate = true;
+          await set(stateRef, {
+            rosters: window.state.rosters,
+            dailyRecords: window.state.dailyRecords,
+            weeklyRecords: window.state.weeklyRecords,
+            teacherConfigs: window.state.teacherConfigs,
+            lastUpdated: new Date().toISOString()
+          });
+        } catch (e) {
+          console.error("Firebase sync error:", e);
+        }
+      }, immediate ? 10 : 350);
+    };
+  </script>
+
+  <!-- APPLICATION LOGIC -->
   <script>
-    // ==========================================
-    // 1. SUPABASE CLIENT
-    // Replace with your actual credentials
-    // ==========================================
-    const SUPABASE_URL = "https://qpemfisnznhrutaqfjee.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_o3VatdX_D2hf2QVQ..."; // Paste your complete publishable key here
-    let supabaseClient = null;
-
-    if (window.supabase && SUPABASE_URL.indexOf("your-project") === -1) {
-      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    }
-
     var STORAGE_KEY = "KEC_SULAIMANYEH_STATE_V1";
     var VAULT_ROSTERS_KEY = "KEC_PERMANENT_ROSTERS_VAULT_V1";
     var ALL_GROUPS = ["A", "B", "C", "D", "E", "F"];
 
-    // ==========================================
-    // 2. YOUR COMPLETE STUDENT ROSTERS (RESTORED)
-    // ==========================================
     var INITIAL_EMBEDDED_ROSTERS = {
       "grade_10_group_A":[
         {"id":"st_10_A_0","name":"ئارۆس ئارام علی عبدالکریم","phone":""},
@@ -675,7 +730,6 @@
         {"id":"st_12_D_4","name":"ئانیا عبداللە عمر فتاح","phone":""},
         {"id":"st_12_D_5","name":"بابۆ ئاسۆ عبدالله عبدالرحمن","phone":""},
         {"id":"st_12_D_6","name":"دانیاڵ علی مهدی حمه‌ڕشید","phone":""},
-        {"id":"st_12_D_7","name":"ژووان شۆڕش باقی عبدالله","phone":""},
         {"id":"st_12_D_8","name":"ژیر کارزان عمر صالح","phone":""},
         {"id":"st_12_D_9","name":"ژێنەر عمر صابر رشید","phone":""},
         {"id":"st_12_D_10","name":"ساريا جمال رسوڵ لطيف","phone":""},
@@ -765,7 +819,7 @@
       { id: "pe", name: "⚽ P.E. (وەرزش)", grades: [11], p1Pass: "11223301", p2Pass: "11223302" }
     ];
 
-    var state = {
+    window.state = {
       activeTab: "daily",
       grade: 12,
       group: "F",
@@ -785,99 +839,35 @@
     };
 
     function initApp() {
-      // 1. Seed rosters with complete embedded lists
-      state.rosters = JSON.parse(JSON.stringify(INITIAL_EMBEDDED_ROSTERS));
-
-      // 2. Overlay any modifications from local storage
+      window.state.rosters = JSON.parse(JSON.stringify(INITIAL_EMBEDDED_ROSTERS));
       loadStateFromStorage();
       ensureTeacherConfigs();
 
       var dateInp = document.getElementById("attendanceDateInput");
-      if (dateInp) dateInp.value = state.date;
+      if (dateInp) dateInp.value = window.state.date;
 
       renderGradeAndGroupButtons();
       renderSubjectsGrid();
       renderPopulatedClassesBanner();
       renderDailyTable();
-
-      // 3. Sync with Supabase in the background
-      initSupabaseSync();
-    }
-
-    async function initSupabaseSync() {
-      if (!supabaseClient) return;
-
-      try {
-        const { data, error } = await supabaseClient
-          .from('app_state')
-          .select('data')
-          .eq('id', 'kec_main_state')
-          .single();
-
-        if (data && data.data && data.data.rosters && Object.keys(data.data.rosters).length > 0) {
-          // Merge remote rosters with local rosters
-          Object.assign(state, data.data);
-          saveStateToStorage();
-          renderDailyTable();
-          renderPopulatedClassesBanner();
-          showToast("☁️ داتاکان لەگەڵ Supabase نوێکرانەوە");
-        } else {
-          // If remote is empty, seed Supabase with our rosters
-          pushStateToSupabase(true);
-        }
-      } catch (err) {
-        console.error("Supabase sync:", err);
-      }
-
-      // Realtime listener
-      supabaseClient
-        .channel('live-kec-sync')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'app_state', filter: 'id=eq.kec_main_state' }, (payload) => {
-          if (payload.new && payload.new.data) {
-            Object.assign(state, payload.new.data);
-            if (state.activeTab === "daily") renderDailyTable();
-            if (state.activeTab === "weekly") renderWeeklyTable();
-            renderPopulatedClassesBanner();
-          }
-        })
-        .subscribe();
-    }
-
-    let pushTimer = null;
-    function pushStateToSupabase(immediate = false) {
-      if (!supabaseClient) return;
-      clearTimeout(pushTimer);
-      pushTimer = setTimeout(async () => {
-        try {
-          await supabaseClient
-            .from('app_state')
-            .upsert({
-              id: 'kec_main_state',
-              data: state,
-              updated_at: new Date().toISOString()
-            });
-        } catch (e) {
-          console.error("Failed to push:", e);
-        }
-      }, immediate ? 50 : 600);
-    }
-
-    function cloudSyncUp() {
-      saveStateToStorage();
-      pushStateToSupabase(true);
-      showToast("⬆️ هەموو ناوەکان لە Supabase سەیڤ کران");
-    }
-
-    function cloudSyncDown() {
-      initSupabaseSync();
     }
 
     function saveStateToStorage() {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        localStorage.setItem(VAULT_ROSTERS_KEY, JSON.stringify(state.rosters));
-        pushStateToSupabase();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(window.state));
+        localStorage.setItem(VAULT_ROSTERS_KEY, JSON.stringify(window.state.rosters));
       } catch (e) {}
+      if (window.pushStateToFirebase) {
+        window.pushStateToFirebase();
+      }
+    }
+
+    function cloudSyncUp() {
+      saveStateToStorage();
+      if (window.pushStateToFirebase) {
+        window.pushStateToFirebase(true);
+      }
+      showToast("⬆️ هەموو ناوەکان لە سێرڤەر سەیڤ کران");
     }
 
     function loadStateFromStorage() {
@@ -887,13 +877,13 @@
           var parsed = JSON.parse(raw);
           if (parsed && typeof parsed === "object") {
             if (parsed.rosters && Object.keys(parsed.rosters).length > 0) {
-              state.rosters = parsed.rosters;
+              window.state.rosters = parsed.rosters;
             }
-            if (parsed.dailyRecords) state.dailyRecords = parsed.dailyRecords;
-            if (parsed.weeklyRecords) state.weeklyRecords = parsed.weeklyRecords;
-            if (parsed.teacherConfigs) state.teacherConfigs = parsed.teacherConfigs;
-            if (parsed.grade) state.grade = parsed.grade;
-            if (parsed.group) state.group = parsed.group;
+            if (parsed.dailyRecords) window.state.dailyRecords = parsed.dailyRecords;
+            if (parsed.weeklyRecords) window.state.weeklyRecords = parsed.weeklyRecords;
+            if (parsed.teacherConfigs) window.state.teacherConfigs = parsed.teacherConfigs;
+            if (parsed.grade) window.state.grade = parsed.grade;
+            if (parsed.group) window.state.group = parsed.group;
           }
         }
       } catch (e) {}
@@ -901,8 +891,8 @@
 
     function ensureTeacherConfigs() {
       defaultSubjects.forEach(function(sub) {
-        if (!state.teacherConfigs[sub.id]) {
-          state.teacherConfigs[sub.id] = {
+        if (!window.state.teacherConfigs[sub.id]) {
+          window.state.teacherConfigs[sub.id] = {
             p1Pass: sub.p1Pass,
             p2Pass: sub.p2Pass,
             p1Groups: ["A", "B", "C"],
@@ -926,11 +916,11 @@
     }
 
     function switchTab(tabId) {
-      if (tabId === "admin" && !state.isLoggedInAsPrincipal) {
+      if (tabId === "admin" && !window.state.isLoggedInAsPrincipal) {
         openPrincipalModal();
         return;
       }
-      state.activeTab = tabId;
+      window.state.activeTab = tabId;
       saveStateToStorage();
       ['subjects', 'daily', 'weekly', 'admin'].forEach(function(t) {
         var el = document.getElementById("section-" + t);
@@ -949,30 +939,30 @@
     }
 
     function selectGrade(g) {
-      state.grade = g;
+      window.state.grade = g;
       saveStateToStorage();
       renderGradeAndGroupButtons();
       renderSubjectsGrid();
       renderPopulatedClassesBanner();
-      if (state.activeTab === "daily") renderDailyTable();
-      if (state.activeTab === "weekly") renderWeeklyTable();
+      if (window.state.activeTab === "daily") renderDailyTable();
+      if (window.state.activeTab === "weekly") renderWeeklyTable();
     }
 
     function selectGroup(grp) {
-      state.group = grp;
+      window.state.group = grp;
       saveStateToStorage();
       renderGradeAndGroupButtons();
       renderSubjectsGrid();
       renderPopulatedClassesBanner();
-      if (state.activeTab === "daily") renderDailyTable();
-      if (state.activeTab === "weekly") renderWeeklyTable();
+      if (window.state.activeTab === "daily") renderDailyTable();
+      if (window.state.activeTab === "weekly") renderWeeklyTable();
     }
 
     function renderGradeAndGroupButtons() {
       [10, 11, 12].forEach(function(g) {
         var btn = document.getElementById("gradeBtn" + g);
         if (!btn) return;
-        btn.className = state.grade === g 
+        btn.className = window.state.grade === g 
           ? "px-4 py-2 rounded-xl text-xs font-extrabold bg-slate-900 text-white shadow"
           : "px-4 py-2 rounded-xl text-xs font-extrabold bg-slate-200 text-slate-700 hover:bg-slate-300";
       });
@@ -980,20 +970,20 @@
       ALL_GROUPS.forEach(function(grp) {
         var btn = document.getElementById("groupBtn" + grp);
         if (!btn) return;
-        btn.className = state.group === grp
+        btn.className = window.state.group === grp
           ? "w-9 h-9 rounded-xl font-extrabold text-xs bg-amber-500 text-slate-950 shadow"
           : "w-9 h-9 rounded-xl font-extrabold text-xs bg-slate-200 text-slate-700";
       });
 
       var badge = document.getElementById("teacherSlotInfoBadge");
-      if (badge) badge.textContent = "پۆلی " + state.grade + " | گروپی " + state.group;
+      if (badge) badge.textContent = "پۆلی " + window.state.grade + " | گروپی " + window.state.group;
     }
 
     function renderSubjectsGrid() {
       var grid = document.getElementById("subjectsGrid");
       if (!grid) return;
       grid.innerHTML = "";
-      var subjects = defaultSubjects.filter(sub => sub.grades.includes(state.grade));
+      var subjects = defaultSubjects.filter(sub => sub.grades.includes(window.state.grade));
 
       subjects.forEach(function(sub) {
         var card = document.createElement("div");
@@ -1002,7 +992,7 @@
           <div>
             <div class="flex items-center justify-between mb-2">
               <h3 class="text-sm font-extrabold text-slate-900">${sub.name}</h3>
-              <span class="text-[10px] bg-slate-100 text-slate-700 px-2 py-1 rounded-lg font-bold">پۆلی ${state.grade}</span>
+              <span class="text-[10px] bg-slate-100 text-slate-700 px-2 py-1 rounded-lg font-bold">پۆلی ${window.state.grade}</span>
             </div>
             <div class="flex gap-2 mt-3">
               <button onclick="promptTeacherLogin('${sub.id}', 1)" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl text-xs font-extrabold shadow">👨‍🏫 مامۆستای ١</button>
@@ -1018,7 +1008,7 @@
     var pendingLoginTeacherSlot = 1;
 
     function promptTeacherLogin(subjectId, slot) {
-      if (state.isLoggedInAsPrincipal) {
+      if (window.state.isLoggedInAsPrincipal) {
         openTeacherSession(subjectId, slot);
         return;
       }
@@ -1035,7 +1025,7 @@
 
     function submitPasswordLogin() {
       var pass = document.getElementById("loginPasswordInput").value.trim();
-      var cfg = state.teacherConfigs[pendingLoginSubject];
+      var cfg = window.state.teacherConfigs[pendingLoginSubject];
       var correctPass = pendingLoginTeacherSlot === 1 ? cfg.p1Pass : cfg.p2Pass;
 
       if (pass === correctPass || pass === "2013") {
@@ -1048,18 +1038,18 @@
     }
 
     function openTeacherSession(subjectId, slot) {
-      state.currentSessionSubject = subjectId;
-      state.currentSessionTeacherSlot = slot;
+      window.state.currentSessionSubject = subjectId;
+      window.state.currentSessionTeacherSlot = slot;
       saveStateToStorage();
       switchTab("daily");
     }
 
     function getRosterKey() {
-      return "grade_" + state.grade + "_group_" + state.group;
+      return "grade_" + window.state.grade + "_group_" + window.state.group;
     }
 
     function getDailyKey() {
-      return getRosterKey() + "_" + state.date + "_" + (state.currentSessionSubject || "physics");
+      return getRosterKey() + "_" + window.state.date + "_" + (window.state.currentSessionSubject || "physics");
     }
 
     function addNewStudentAction() {
@@ -1071,9 +1061,9 @@
       if (!name) return;
 
       var rKey = getRosterKey();
-      if (!state.rosters[rKey]) state.rosters[rKey] = [];
+      if (!window.state.rosters[rKey]) window.state.rosters[rKey] = [];
 
-      state.rosters[rKey].push({
+      window.state.rosters[rKey].push({
         id: "st_" + Date.now(),
         name: name,
         phone: phone
@@ -1084,7 +1074,7 @@
       saveStateToStorage();
       renderDailyTable();
       renderPopulatedClassesBanner();
-      showToast("✅ خوێندکار زیادکرا و سەیڤ کرا");
+      showToast("✅ خوێندکار زیادکرا و لە سێرڤەر سەیڤ کرا");
     }
 
     function renderDailyTable() {
@@ -1093,22 +1083,22 @@
       tbody.innerHTML = "";
 
       var rKey = getRosterKey();
-      var students = state.rosters[rKey] || [];
+      var students = window.state.rosters[rKey] || [];
       document.getElementById("dailyStudentCountBadge").textContent = students.length + " خوێندکار";
 
-      var subObj = defaultSubjects.find(s => s.id === state.currentSessionSubject);
-      var subName = subObj ? subObj.name : state.currentSessionSubject;
-      document.getElementById("dailyTableTitle").textContent = "تۆماری ڕۆژانە — پۆلی " + state.grade + " (" + state.group + ") — " + subName;
-      document.getElementById("activeTeacherBadge").textContent = subName + " | پۆلی " + state.grade + "-" + state.group;
+      var subObj = defaultSubjects.find(s => s.id === window.state.currentSessionSubject);
+      var subName = subObj ? subObj.name : window.state.currentSessionSubject;
+      document.getElementById("dailyTableTitle").textContent = "تۆماری ڕۆژانە — پۆلی " + window.state.grade + " (" + window.state.group + ") — " + subName;
+      document.getElementById("activeTeacherBadge").textContent = subName + " | پۆلی " + window.state.grade + "-" + window.state.group;
 
       var dKey = getDailyKey();
-      if (!state.dailyRecords[dKey]) state.dailyRecords[dKey] = {};
-      var records = state.dailyRecords[dKey];
+      if (!window.state.dailyRecords[dKey]) window.state.dailyRecords[dKey] = {};
+      var records = window.state.dailyRecords[dKey];
 
       var counts = { P: 0, L: 0, E: 0, A: 0, S: 0 };
 
       if (students.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500 font-bold">هیچ خوێندکارێک لە پۆلی ${state.grade} - گروپی ${state.group} نییە. تکایە لە شریتە زەردەکەی سەرەوە ئەو گروپە هەڵبژێرە کە خوێندکارەکانی تێدایە.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500 font-bold">هیچ خوێندکارێک لە پۆلی ${window.state.grade} - گروپی ${window.state.group} نییە. تکایە لە شریتە زەردەکەی سەرەوە ئەو گروپە هەڵبژێرە کە خوێندکارەکانی تێدایە.</td></tr>`;
         updateCountersUI(counts);
         return;
       }
@@ -1145,13 +1135,13 @@
 
     function setStatus(studentId, status) {
       var dKey = getDailyKey();
-      if (!state.dailyRecords[dKey]) state.dailyRecords[dKey] = {};
-      state.dailyRecords[dKey][studentId] = { status: status, note: "" };
+      if (!window.state.dailyRecords[dKey]) window.state.dailyRecords[dKey] = {};
+      window.state.dailyRecords[dKey][studentId] = { status: status, note: "" };
       
-      var wKey = getRosterKey() + "_" + (state.currentSessionSubject || "physics");
-      if (!state.weeklyRecords[wKey]) state.weeklyRecords[wKey] = {};
-      if (!state.weeklyRecords[wKey][studentId]) state.weeklyRecords[wKey][studentId] = {};
-      state.weeklyRecords[wKey][studentId][state.dayOfWeek] = status;
+      var wKey = getRosterKey() + "_" + (window.state.currentSessionSubject || "physics");
+      if (!window.state.weeklyRecords[wKey]) window.state.weeklyRecords[wKey] = {};
+      if (!window.state.weeklyRecords[wKey][studentId]) window.state.weeklyRecords[wKey][studentId] = {};
+      window.state.weeklyRecords[wKey][studentId][window.state.dayOfWeek] = status;
 
       saveStateToStorage();
       renderDailyTable();
@@ -1159,8 +1149,8 @@
 
     function deleteStudent(studentId) {
       var rKey = getRosterKey();
-      if (!state.rosters[rKey]) return;
-      state.rosters[rKey] = state.rosters[rKey].filter(st => st.id !== studentId);
+      if (!window.state.rosters[rKey]) return;
+      window.state.rosters[rKey] = window.state.rosters[rKey].filter(st => st.id !== studentId);
       saveStateToStorage();
       renderDailyTable();
       renderPopulatedClassesBanner();
@@ -1180,13 +1170,13 @@
       tbody.innerHTML = "";
 
       var rKey = getRosterKey();
-      var students = state.rosters[rKey] || [];
+      var students = window.state.rosters[rKey] || [];
       var days = ["Sun", "Mon", "Tue", "Wed", "Thu"];
-      var wKey = rKey + "_" + (state.currentSessionSubject || "physics");
+      var wKey = rKey + "_" + (window.state.currentSessionSubject || "physics");
 
       students.forEach(function(st, idx) {
         var cells = days.map(function(d) {
-          var s = (state.weeklyRecords[wKey] && state.weeklyRecords[wKey][st.id] && state.weeklyRecords[wKey][st.id][d]) || "P";
+          var s = (window.state.weeklyRecords[wKey] && window.state.weeklyRecords[wKey][st.id] && window.state.weeklyRecords[wKey][st.id][d]) || "P";
           return `<td class="p-3 text-center font-bold text-xs">${s}</td>`;
         }).join("");
 
@@ -1206,14 +1196,14 @@
 
     function sendWeeklyWhatsApp(studentId) {
       var rKey = getRosterKey();
-      var st = (state.rosters[rKey] || []).find(s => s.id === studentId);
+      var st = (window.state.rosters[rKey] || []).find(s => s.id === studentId);
       if (!st || !st.phone) {
         showToast("❌ ژمارەی بەخێوکار نییە!");
         return;
       }
       var cleanPhone = st.phone.replace(/[^0-9]/g, "");
       if (cleanPhone.startsWith("07")) cleanPhone = "964" + cleanPhone.slice(1);
-      var text = `🏫 KEC Sulaimanyeh\nئاگاداری ئامادەبوونی خوێندکار: ${st.name}\nپۆلی ${state.grade}-${state.group}`;
+      var text = `🏫 KEC Sulaimanyeh\nئاگاداری ئامادەبوونی خوێندکار: ${st.name}\nپۆلی ${window.state.grade}-${window.state.group}`;
       window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`, "_blank");
     }
 
@@ -1223,29 +1213,29 @@
       if (!banner || !listDiv) return;
       listDiv.innerHTML = "";
 
-      var keys = Object.keys(state.rosters).sort();
+      var keys = Object.keys(window.state.rosters).sort();
       var hasAny = false;
       keys.forEach(function(key) {
-        if (state.rosters[key] && state.rosters[key].length > 0) {
+        if (window.state.rosters[key] && window.state.rosters[key].length > 0) {
           hasAny = true;
           var parts = key.split("_");
           var g = parts[1];
           var grp = parts[3];
-          var isCurrent = (parseInt(g) === state.grade && grp === state.group);
+          var isCurrent = (parseInt(g) === window.state.grade && grp === window.state.group);
           var btn = document.createElement("button");
           btn.className = isCurrent 
             ? "bg-slate-900 text-amber-400 px-3 py-1 rounded-lg text-xs font-extrabold shadow"
             : "bg-amber-200 hover:bg-amber-300 text-amber-900 px-2.5 py-1 rounded-lg text-xs font-extrabold";
-          btn.textContent = `پۆلی ${g} - گروپ ${grp} (${state.rosters[key].length})`;
+          btn.textContent = `پۆلی ${g} - گروپ ${grp} (${window.state.rosters[key].length})`;
           btn.onclick = function() {
-            state.grade = parseInt(g);
-            state.group = grp;
+            window.state.grade = parseInt(g);
+            window.state.group = grp;
             saveStateToStorage();
             renderGradeAndGroupButtons();
             renderSubjectsGrid();
             renderPopulatedClassesBanner();
-            if (state.activeTab === "daily") renderDailyTable();
-            if (state.activeTab === "weekly") renderWeeklyTable();
+            if (window.state.activeTab === "daily") renderDailyTable();
+            if (window.state.activeTab === "weekly") renderWeeklyTable();
           };
           listDiv.appendChild(btn);
         }
@@ -1262,7 +1252,7 @@
     function submitPrincipalLogin() {
       var val = document.getElementById("principalPasswordInput").value.trim();
       if (val === "2013" || val.toUpperCase() === "KEC@2013") {
-        state.isLoggedInAsPrincipal = true;
+        window.state.isLoggedInAsPrincipal = true;
         closePrincipalModal();
         switchTab("daily");
         showToast("👑 بە سەرکەوتوویی وەک بەڕێوەبەر داخڵ بوویت");
@@ -1271,14 +1261,14 @@
       }
     }
     function logoutPrincipalRole() {
-      state.isLoggedInAsPrincipal = false;
+      window.state.isLoggedInAsPrincipal = false;
       switchTab("daily");
     }
-    function onDateChange(v) { state.date = v; saveStateToStorage(); renderDailyTable(); }
-    function onDayOfWeekChange(v) { state.dayOfWeek = v; saveStateToStorage(); renderDailyTable(); }
+    function onDateChange(v) { window.state.date = v; saveStateToStorage(); renderDailyTable(); }
+    function onDayOfWeekChange(v) { window.state.dayOfWeek = v; saveStateToStorage(); renderDailyTable(); }
     function markAllPresentAction() {
       var rKey = getRosterKey();
-      (state.rosters[rKey] || []).forEach(st => setStatus(st.id, 'P'));
+      (window.state.rosters[rKey] || []).forEach(st => setStatus(st.id, 'P'));
     }
   </script>
 </body>
