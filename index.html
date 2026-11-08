@@ -112,27 +112,19 @@
 
   <!-- TOP HEADER -->
   <header class="top-header p-4 sticky top-0 z-45">
-    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+    <div class="max-w-6xl mx-auto flex flex-col items-center justify-center gap-4 text-center">
       <div class="flex items-center gap-3.5 text-center md:text-right">
         <div class="relative w-20 h-20 rounded-full bg-white p-1 shadow-2xl border-2 border-amber-400 cursor-pointer flex-shrink-0 overflow-hidden">
-          <svg viewBox="0 0 200 200" class="w-full h-full rounded-full bg-white">
-            <circle cx="100" cy="100" r="99" fill="#ffffff"></circle>
-            <text x="100" y="54" text-anchor="middle" fill="#000000" font-size="15.5" font-weight="900" font-family="Georgia, serif" letter-spacing="4">K E C</text>
-            <circle cx="74" cy="91" r="12.5" fill="#c89d42"></circle>
-            <circle cx="98" cy="103" r="11.5" fill="#2563eb"></circle>
-            <circle cx="111" cy="126" r="10" fill="#b57edc"></circle>
-            <text x="100" y="175" text-anchor="middle" fill="#000000" font-size="13" font-weight="800">EST. 2013</text>
-          </svg>
+          <img src="data:image/jpeg;base64,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" alt="KEC logo" class="w-full h-full rounded-full object-cover">
         </div>
         <div>
           <h1 class="text-lg md:text-xl font-extrabold tracking-tight text-white">Kurdistan Educational Compound / Sulaimanyeh</h1>
           <p class="text-xs text-amber-400 font-bold">(KEC - EST. 2013) • بەڕێوەبەر: <span id="headerPrincipalName">Ms: Suhaila Ali</span> <span id="roleStatusBadge" class="bg-white/15 text-white px-2 py-0.5 rounded-full text-[10px] mr-1">👨‍🏫 دۆخی مامۆستا</span> <span id="cloudLiveBadge" class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full text-[10px] mr-1">⚡ Firebase Live</span></p>
         </div>
       </div>
-      <div class="flex flex-wrap items-center justify-center gap-1.5">
-        <button onclick="openPrincipalModal()" id="principalHeaderBtn" class="pill-btn bg-amber-500 text-slate-950 hover:bg-amber-400 font-extrabold shadow">👑 بەڕێوەبەر / ڕێپێدراو</button>
+      <div class="flex flex-wrap items-center justify-center gap-1.5 w-full">
+        <button onclick="openPrincipalModal()" id="principalHeaderBtn" style="padding:12px 28px;font-size:1rem" class="pill-btn bg-amber-500 text-slate-950 hover:bg-amber-400 font-extrabold shadow">👑 بەڕێوەبەر / ڕێپێدراو</button>
         <button onclick="logoutPrincipalRole()" id="logoutPrincipalBtn" class="pill-btn bg-red-600 text-white hover:bg-red-500 hidden">🚪 دەرچوون</button>
-        <button onclick="cloudSyncUp()" class="pill-btn bg-blue-600 text-white hover:bg-blue-500">⬆️ سەیڤکردن لە سێرڤەر</button>
       </div>
     </div>
   </header>
@@ -140,26 +132,13 @@
   <!-- NAVIGATION TABS -->
   <nav class="max-w-6xl mx-auto px-4 mt-4">
     <div class="bg-slate-900 p-1.5 rounded-2xl flex gap-1 shadow-lg">
-      <div id="tab-subjects" class="nav-tab" onclick="switchTab('subjects')">1. 📚 وانەکان</div>
-      <div id="tab-daily" class="nav-tab active" onclick="switchTab('daily')">2. 📋 تۆماری ڕۆژانە</div>
-      <div id="tab-weekly" class="nav-tab" onclick="switchTab('weekly')">3. 📊 خشتەی هەفتانە</div>
-      <div id="tab-admin" class="nav-tab" onclick="switchTab('admin')">4. 👑 بەڕێوەبەر</div>
+      <div id="tab-subjects" class="nav-tab active" onclick="switchTab('subjects')">1. 📚 وانەکان</div>
+      <div id="tab-weekly" class="nav-tab" onclick="switchTab('weekly')">2. 📊 خشتەی هەفتانە</div>
     </div>
   </nav>
 
   <!-- MAIN CONTAINER -->
   <main class="max-w-6xl mx-auto p-4 mb-20">
-
-    <!-- POPULATED CLASSES BANNER -->
-    <div id="populatedClassesBanner" class="mb-4 bg-amber-50 border-2 border-amber-300 rounded-2xl p-3 shadow-sm">
-      <div class="flex items-center justify-between flex-wrap gap-2">
-        <div class="text-xs font-bold text-amber-900 flex items-center gap-2">
-          <span>📌 پۆل و گروپە پڕکراوەکان:</span>
-          <div id="populatedClassesList" class="flex flex-wrap gap-1.5"></div>
-        </div>
-        <span class="text-[11px] text-amber-700 font-semibold">کرتە لە گروپەکان بکە بۆ چوونە سەر پۆلەکە</span>
-      </div>
-    </div>
 
     <!-- GRADE & GROUP SELECTOR BAR -->
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -181,7 +160,7 @@
     </div>
 
     <!-- TAB 1: SUBJECTS -->
-    <div id="section-subjects" class="space-y-6 hidden">
+    <div id="section-subjects" class="space-y-6">
       <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-5 shadow-xl border border-slate-800">
         <div class="flex flex-col md:flex-row items-center justify-between gap-3">
           <div>
@@ -195,7 +174,10 @@
     </div>
 
     <!-- TAB 2: DAILY REGISTER -->
-    <div id="section-daily" class="space-y-6">
+    <div id="section-daily" class="space-y-6 hidden">
+      <div>
+        <button onclick="switchTab('subjects')" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow">➡️ گەڕانەوە بۆ وانەکان</button>
+      </div>
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-2 flex-wrap">
           <span class="text-xs font-bold text-slate-600">📅 ڕێکەوت:</span>
@@ -339,7 +321,7 @@
         <button onclick="closePrincipalModal()" class="text-slate-400 hover:text-slate-700 font-bold text-lg">✕</button>
       </div>
       <div class="space-y-3">
-        <input type="password" id="principalPasswordInput" onkeydown="if(event.key==='Enter') submitPrincipalLogin()" placeholder="کۆدی نهێنی (2013)..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900">
+        <input type="password" id="principalPasswordInput" onkeydown="if(event.key==='Enter') submitPrincipalLogin()" placeholder="کۆدی نهێنی (kec2026)..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900">
       </div>
       <button onclick="submitPrincipalLogin()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 py-2.5 rounded-xl text-xs font-extrabold shadow">
         👑 چوونەژوورەوە
@@ -820,7 +802,7 @@
     ];
 
     window.state = {
-      activeTab: "daily",
+      activeTab: "subjects",
       grade: 12,
       group: "F",
       date: new Date().toISOString().slice(0, 10),
@@ -845,11 +827,13 @@
 
       var dateInp = document.getElementById("attendanceDateInput");
       if (dateInp) dateInp.value = window.state.date;
+      syncDayFromDate(window.state.date, false);
 
       renderGradeAndGroupButtons();
       renderSubjectsGrid();
       renderPopulatedClassesBanner();
       renderDailyTable();
+      switchTab("subjects");
     }
 
     function saveStateToStorage() {
@@ -994,9 +978,8 @@
               <h3 class="text-sm font-extrabold text-slate-900">${sub.name}</h3>
               <span class="text-[10px] bg-slate-100 text-slate-700 px-2 py-1 rounded-lg font-bold">پۆلی ${window.state.grade}</span>
             </div>
-            <div class="flex gap-2 mt-3">
-              <button onclick="promptTeacherLogin('${sub.id}', 1)" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl text-xs font-extrabold shadow">👨‍🏫 مامۆستای ١</button>
-              <button onclick="promptTeacherLogin('${sub.id}', 2)" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-2 rounded-xl text-xs font-extrabold shadow">👩‍🏫 مامۆستای ٢</button>
+            <div class="flex justify-center mt-3">
+              <button onclick="promptTeacherLogin('${sub.id}', 1)" class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-2 rounded-xl text-xs font-extrabold shadow">👨‍🏫 مامۆستای ١</button>
             </div>
           </div>
         `;
@@ -1122,21 +1105,34 @@
               <button onclick="setStatus('${st.id}', 'A')" class="status-btn ${stRec.status === 'A' ? 'active-A' : ''}">❌ غیاب</button>
             </div>
           </td>
-          <td class="p-3 text-center text-[11px] text-slate-500">${stRec.note || '—'}</td>
+          <td class="p-2 text-center"><input type="text" class="note-input w-40 bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 text-[11px] text-slate-800" placeholder="تێبینی..."></td>
           <td class="p-3 text-center">
             <button onclick="deleteStudent('${st.id}')" class="text-red-500 hover:text-red-700 font-bold text-xs p-1">🗑️</button>
           </td>
         `;
+        var noteInp = tr.querySelector(".note-input");
+        noteInp.value = stRec.note || "";
+        noteInp.addEventListener("change", function() { setNote(st.id, this.value); });
         tbody.appendChild(tr);
       });
 
       updateCountersUI(counts);
     }
 
+    function setNote(studentId, text) {
+      var dKey = getDailyKey();
+      if (!window.state.dailyRecords[dKey]) window.state.dailyRecords[dKey] = {};
+      var cur = window.state.dailyRecords[dKey][studentId] || { status: "P", note: "" };
+      cur.note = text.trim();
+      window.state.dailyRecords[dKey][studentId] = cur;
+      saveStateToStorage();
+    }
+
     function setStatus(studentId, status) {
       var dKey = getDailyKey();
       if (!window.state.dailyRecords[dKey]) window.state.dailyRecords[dKey] = {};
-      window.state.dailyRecords[dKey][studentId] = { status: status, note: "" };
+      var prevNote = (window.state.dailyRecords[dKey][studentId] || {}).note || "";
+      window.state.dailyRecords[dKey][studentId] = { status: status, note: prevNote };
       
       var wKey = getRosterKey() + "_" + (window.state.currentSessionSubject || "physics");
       if (!window.state.weeklyRecords[wKey]) window.state.weeklyRecords[wKey] = {};
@@ -1251,10 +1247,10 @@
     }
     function submitPrincipalLogin() {
       var val = document.getElementById("principalPasswordInput").value.trim();
-      if (val === "2013" || val.toUpperCase() === "KEC@2013") {
+      if (val === "kec2026") {
         window.state.isLoggedInAsPrincipal = true;
         closePrincipalModal();
-        switchTab("daily");
+        switchTab("subjects");
         showToast("👑 بە سەرکەوتوویی وەک بەڕێوەبەر داخڵ بوویت");
       } else {
         showToast("❌ کۆدی نهێنی هەڵەیە!");
@@ -1262,9 +1258,21 @@
     }
     function logoutPrincipalRole() {
       window.state.isLoggedInAsPrincipal = false;
-      switchTab("daily");
+      switchTab("subjects");
     }
-    function onDateChange(v) { window.state.date = v; saveStateToStorage(); renderDailyTable(); }
+    function syncDayFromDate(v, showWeekendMsg) {
+      var d = new Date(v + "T00:00:00");
+      var names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      var name = names[d.getDay()];
+      if (name === "Fri" || name === "Sat") {
+        if (showWeekendMsg) showToast("⚠️ ئەم ڕۆژە وانە نییە (هەینی/شەممە)");
+        return;
+      }
+      window.state.dayOfWeek = name;
+      var sel = document.getElementById("dayOfWeekSelect");
+      if (sel) sel.value = name;
+    }
+    function onDateChange(v) { window.state.date = v; syncDayFromDate(v, true); saveStateToStorage(); renderDailyTable(); }
     function onDayOfWeekChange(v) { window.state.dayOfWeek = v; saveStateToStorage(); renderDailyTable(); }
     function markAllPresentAction() {
       var rKey = getRosterKey();
