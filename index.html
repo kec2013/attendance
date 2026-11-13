@@ -140,6 +140,7 @@
       <div id="tab-subjects" class="nav-tab active" onclick="switchTab('subjects')">1. 📚 وانەکان</div>
       <div id="tab-weekly" class="nav-tab" onclick="switchTab('weekly')">2. 📊 خشتەی هەفتانە</div>
       <div id="tab-logs" class="nav-tab" onclick="switchTab('logs')" style="display:none">3. 📜 لۆگەکان</div>
+      <div id="tab-manage" class="nav-tab" onclick="switchTab('manage')" style="display:none">4. 🛠️ بەڕێوەبردنی مامۆستایان</div>
     </div>
   </nav>
 
@@ -288,6 +289,29 @@
       </div>
     </div>
 
+    <!-- TAB 4: MANAGE TEACHERS (admin only) -->
+    <div id="section-manage" class="space-y-6 hidden">
+      <div class="bg-gradient-to-r from-amber-600 to-amber-800 text-white rounded-2xl p-5 shadow-xl">
+        <h2 class="text-lg font-black">🛠️ بەڕێوەبردنی مامۆستایان</h2>
+        <p class="text-xs text-amber-100 mt-1">گۆڕینی پاسۆرد و سڕینەوەی هەژماری مامۆستایان</p>
+      </div>
+      <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-200">
+        <p class="text-[11px] text-slate-500 font-bold px-2">ئاگاداری: پاسۆردەکان بە شێوەی شاراوە هەڵگیراون و ناتوانرێت پیشانبدرێن. دەتوانیت پاسۆردێکی نوێ دابنێیت.</p>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+        <table class="w-full text-xs text-right">
+          <thead class="bg-slate-50 text-slate-700 font-extrabold">
+            <tr>
+              <th class="p-3">ناوی مامۆستا</th>
+              <th class="p-3">تۆمارکراوە لە</th>
+              <th class="p-3">کردارەکان</th>
+            </tr>
+          </thead>
+          <tbody id="manageTableBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- TAB 3: ADMIN LOGS (admin only) -->
     <div id="section-logs" class="space-y-6 hidden">
       <div class="bg-gradient-to-r from-amber-600 to-amber-800 text-white rounded-2xl p-5 shadow-xl">
@@ -321,7 +345,7 @@
   <!-- FOOTER CREDIT (shows at the bottom of the page) -->
   <div class="px-4 pt-6 pb-8 select-none" style="direction: ltr; text-align: left;">
     <div class="inline-block px-3 py-1.5 rounded-lg bg-slate-950 border border-blue-500/50 shadow-lg shadow-blue-900/40" style="font-family: 'Orbitron', system-ui, sans-serif;">
-      <span class="text-[10px] tracking-wider text-blue-300">Made by : </span><span class="text-[11px] font-extrabold tracking-widest text-blue-400" style="text-shadow: 0 0 8px rgba(96,165,250,0.8);">cy3ber_arch</span>
+      <span class="text-[10px] tracking-wider text-blue-300">Made by : </span><span class="text-[11px] font-extrabold tracking-widest text-blue-400" style="text-shadow: 0 0 8px rgba(96,165,250,0.8);">Mr. Mahmood M. Ahmed</span>
     </div>
   </div>
 
@@ -432,7 +456,12 @@
     window.teachersCache = {};
     window.settingsCache = {};
     window.settingsLoaded = false;
-    onValue(teachersRef, (snap) => { window.teachersCache = snap.val() || {}; });
+    onValue(teachersRef, (snap) => {
+      window.teachersCache = snap.val() || {};
+      if (window.state && window.state.activeTab === 'manage' && window.renderManageTeachers) window.renderManageTeachers();
+    });
+    window.updateTeacherHash = (key, hash) => set(ref(db, 'teachers/' + key + '/hash'), hash);
+    window.deleteTeacherRecord = (key) => set(ref(db, 'teachers/' + key), null);
     onValue(settingsRef, (snap) => { window.settingsCache = snap.val() || {}; window.settingsLoaded = true; });
     window.saveTeacherRecord = (key, data) => set(ref(db, 'teachers/' + key), data);
     window.saveAdminHash = (hash) => set(ref(db, 'settings/adminHash'), hash);
@@ -1005,13 +1034,13 @@
     }
 
     function switchTab(tabId) {
-      if (tabId === "logs" && !window.state.isLoggedInAsPrincipal) {
+      if ((tabId === "logs" || tabId === "manage") && !window.state.isLoggedInAsPrincipal) {
         openPrincipalModal();
         return;
       }
       window.state.activeTab = tabId;
       saveStateToStorage();
-      ['subjects', 'daily', 'weekly', 'logs'].forEach(function(t) {
+      ['subjects', 'daily', 'weekly', 'logs', 'manage'].forEach(function(t) {
         var el = document.getElementById("section-" + t);
         var tabEl = document.getElementById("tab-" + t);
         if (t === tabId) {
@@ -1026,6 +1055,7 @@
       if (tabId === "daily") renderDailyTable();
       if (tabId === "weekly") renderWeeklyTable();
       if (tabId === "logs") renderLogs();
+      if (tabId === "manage") renderManageTeachers();
     }
 
     function selectGrade(g) {
@@ -1469,7 +1499,9 @@
       login_failed: "❌ هەوڵی هەڵە",
       admin_login: "👑 چوونەژوورەوەی بەڕێوەبەر",
       attendance: "📝 گۆڕانکاری غیابات",
-      note: "💬 تێبینی"
+      note: "💬 تێبینی",
+      password_reset: "🔑 گۆڕینی پاسۆرد لەلایەن بەڕێوەبەر",
+      teacher_deleted: "🗑️ سڕینەوەی مامۆستا"
     };
 
     function renderLogs() {
@@ -1512,6 +1544,85 @@
       });
     }
 
+    function renderManageTeachers() {
+      var tbody = document.getElementById("manageTableBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+      var list = Object.keys(window.teachersCache || {}).map(function(k) {
+        var v = window.teachersCache[k] || {};
+        return { key: k, name: v.name || k, createdAt: v.createdAt || "" };
+      });
+      list.sort(function(a, b) { return a.name.localeCompare(b.name); });
+
+      if (list.length === 0) {
+        var empty = document.createElement("tr");
+        empty.innerHTML = '<td colspan="3" class="p-6 text-center text-slate-400 font-bold">هیچ مامۆستایەک تۆمار نەکراوە</td>';
+        tbody.appendChild(empty);
+        return;
+      }
+
+      list.forEach(function(t) {
+        var tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50";
+
+        var nameTd = document.createElement("td");
+        nameTd.className = "p-3 font-extrabold text-slate-800";
+        nameTd.textContent = t.name;
+
+        var dateTd = document.createElement("td");
+        dateTd.className = "p-3 font-mono text-slate-500";
+        dateTd.textContent = t.createdAt ? localDateStr(new Date(t.createdAt)) : "—";
+
+        var actTd = document.createElement("td");
+        actTd.className = "p-3";
+        var resetBtn = document.createElement("button");
+        resetBtn.className = "bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-1.5 rounded-lg font-extrabold text-[11px] shadow ml-2";
+        resetBtn.textContent = "🔑 گۆڕینی پاسۆرد";
+        resetBtn.addEventListener("click", function() { resetTeacherPassword(t.key, t.name); });
+        var delBtn = document.createElement("button");
+        delBtn.className = "bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg font-extrabold text-[11px] shadow";
+        delBtn.textContent = "🗑️ سڕینەوە";
+        delBtn.addEventListener("click", function() { deleteTeacher(t.key, t.name); });
+        actTd.appendChild(resetBtn);
+        actTd.appendChild(delBtn);
+
+        tr.appendChild(nameTd);
+        tr.appendChild(dateTd);
+        tr.appendChild(actTd);
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function resetTeacherPassword(key, name) {
+      if (!window.state.isLoggedInAsPrincipal) return;
+      var pass = prompt("پاسۆردی نوێ بۆ " + name + " (لانی کەم ٤ پیت):");
+      if (pass === null) return;
+      pass = pass.trim();
+      if (pass.length < 4) { showToast("⚠️ پاسۆرد دەبێت لانی کەم ٤ پیت بێت"); return; }
+      try {
+        var hash = await sha256Hex(teacherHashInput(key, pass));
+        await window.updateTeacherHash(key, hash);
+        addLog("password_reset", { teacher: name, subject: "—", detail: "پاسۆردی نوێ دانرا" });
+        showToast("✅ پاسۆردەکە گۆڕدرا");
+      } catch (err) {
+        console.error(err);
+        showToast("❌ گۆڕینی پاسۆرد سەرکەوتوو نەبوو");
+      }
+    }
+
+    async function deleteTeacher(key, name) {
+      if (!window.state.isLoggedInAsPrincipal) return;
+      if (!confirm("دڵنیایت لە سڕینەوەی " + name + "؟")) return;
+      try {
+        await window.deleteTeacherRecord(key);
+        addLog("teacher_deleted", { teacher: name, subject: "—", detail: "لابرا لە سیستەم" });
+        showToast("🗑️ مامۆستاکە سڕایەوە");
+      } catch (err) {
+        console.error(err);
+        showToast("❌ سڕینەوە سەرکەوتوو نەبوو");
+      }
+    }
+
     function clearLogsFilter() {
       document.getElementById("logsDateFilter").value = "";
       renderLogs();
@@ -1523,6 +1634,8 @@
       b.textContent = window.state.isLoggedInAsPrincipal ? "👑 دۆخی بەڕێوەبەر" : "👨‍🏫 دۆخی مامۆستا";
       var logsTab = document.getElementById("tab-logs");
       if (logsTab) logsTab.style.display = window.state.isLoggedInAsPrincipal ? "" : "none";
+      var manageTab = document.getElementById("tab-manage");
+      if (manageTab) manageTab.style.display = window.state.isLoggedInAsPrincipal ? "" : "none";
     }
 
     function loginAsPrincipal() {
