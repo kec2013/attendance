@@ -138,7 +138,7 @@
   <nav class="max-w-6xl mx-auto px-4 mt-4">
     <div class="bg-slate-900 p-1.5 rounded-2xl flex gap-1 shadow-lg">
       <div id="tab-subjects" class="nav-tab active" onclick="switchTab('subjects')">1. 📚 وانەکان</div>
-      <div id="tab-weekly" class="nav-tab" onclick="switchTab('weekly')">2. 📊 خشتەی هەفتانە</div>
+      <div id="tab-weekly" class="nav-tab" onclick="switchTab('weekly')" style="display:none">2. 📊 خشتەی هەفتانە</div>
       <div id="tab-logs" class="nav-tab" onclick="switchTab('logs')" style="display:none">3. 📜 لۆگەکان</div>
       <div id="tab-manage" class="nav-tab" onclick="switchTab('manage')" style="display:none">4. 🛠️ بەڕێوەبردنی مامۆستایان</div>
       <div id="tab-reports" class="nav-tab" onclick="switchTab('reports')" style="display:none">5. 📥 داگرتنی ڕاپۆرت</div>
@@ -267,6 +267,10 @@
     <div id="section-weekly" class="space-y-6 hidden">
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex items-center justify-between">
         <h3 class="text-xs font-black text-slate-800">📊 خشتەی هەفتانەی ئامادەبوون</h3>
+        <div class="flex items-center gap-2 flex-wrap">
+          <span id="weeklySubjectLabel" class="text-xs font-extrabold bg-indigo-50 text-indigo-800 px-3 py-1.5 rounded-lg"></span>
+          <select id="weeklySubjectSelect" onchange="renderWeeklyTable()" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-900" style="display:none"></select>
+        </div>
         <button onclick="renderWeeklyTable()" class="pill-btn bg-slate-900 text-white">🔄 نوێکردنەوە</button>
       </div>
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -973,6 +977,7 @@
       currentSessionSubject: "physics",
       currentSessionTeacherSlot: 1,
       isLoggedInAsPrincipal: false,
+      isLoggedInAsTeacher: false,
       role: "teacher",
       customLogo: "",
       rosters: {},
@@ -1078,7 +1083,12 @@
       }, 2600);
     }
 
+    function canSeeWeekly() {
+      return !!(window.state.isLoggedInAsPrincipal || window.state.isLoggedInAsTeacher);
+    }
+
     function switchTab(tabId) {
+      if (tabId === "weekly" && !canSeeWeekly()) tabId = "subjects";
       if ((tabId === "logs" || tabId === "manage" || tabId === "reports") && !window.state.isLoggedInAsPrincipal) {
         openPrincipalModal();
         return;
@@ -1238,6 +1248,8 @@
       window.state.currentSessionSubject = subjectId;
       window.state.currentSessionTeacherSlot = slot;
       window.state.currentSessionTeacherName = teacherName || "";
+      window.state.isLoggedInAsTeacher = !window.state.isLoggedInAsPrincipal;
+      updateRoleBadge();
       saveStateToStorage();
       switchTab("daily");
     }
@@ -1433,15 +1445,51 @@
       });
     }
 
+    // Which subject the weekly table shows: the admin picks one, a teacher sees their own
+    function weeklySubjectId() {
+      if (window.state.isLoggedInAsPrincipal) {
+        var sel = document.getElementById("weeklySubjectSelect");
+        if (sel && sel.value) return sel.value;
+      }
+      return window.state.currentSessionSubject || "physics";
+    }
+
+    function updateWeeklyHeader() {
+      var isAdmin = !!window.state.isLoggedInAsPrincipal;
+      var label = document.getElementById("weeklySubjectLabel");
+      var sel = document.getElementById("weeklySubjectSelect");
+      if (sel) {
+        sel.style.display = isAdmin ? "" : "none";
+        if (isAdmin) {
+          var prev = sel.value || window.state.currentSessionSubject;
+          sel.innerHTML = "";
+          defaultSubjects.filter(function(sub) { return sub.grades.includes(Number(window.state.grade)); })
+            .forEach(function(sub) {
+              var opt = document.createElement("option");
+              opt.value = sub.id;
+              opt.textContent = sub.name;
+              sel.appendChild(opt);
+            });
+          sel.value = Array.from(sel.options).some(function(o) { return o.value === prev; })
+            ? prev : (sel.options[0] ? sel.options[0].value : "");
+        }
+      }
+      if (label) {
+        label.style.display = isAdmin ? "none" : "";
+        label.textContent = "📘 " + getSubjectName(weeklySubjectId());
+      }
+    }
+
     function renderWeeklyTable() {
       var tbody = document.getElementById("weeklyTableBody");
       if (!tbody) return;
       tbody.innerHTML = "";
+      updateWeeklyHeader();
 
       var rKey = getRosterKey();
       var students = window.state.rosters[rKey] || [];
       var days = ["Sun", "Mon", "Tue", "Wed", "Thu"];
-      var wKey = rKey + "_" + (window.state.currentSessionSubject || "physics");
+      var wKey = rKey + "_" + weeklySubjectId();
 
       students.forEach(function(st, idx) {
         var cells = days.map(function(d) {
@@ -1848,6 +1896,8 @@
       if (logsTab) logsTab.style.display = window.state.isLoggedInAsPrincipal ? "" : "none";
       var manageTab = document.getElementById("tab-manage");
       if (manageTab) manageTab.style.display = window.state.isLoggedInAsPrincipal ? "" : "none";
+      var weeklyTab = document.getElementById("tab-weekly");
+      if (weeklyTab) weeklyTab.style.display = canSeeWeekly() ? "" : "none";
       var reportsTab = document.getElementById("tab-reports");
       if (reportsTab) reportsTab.style.display = window.state.isLoggedInAsPrincipal ? "" : "none";
     }
