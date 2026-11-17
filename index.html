@@ -124,7 +124,7 @@
         </div>
         <div>
           <h1 class="text-lg md:text-xl font-extrabold tracking-tight text-white">Kurdistan Educational Compound / Sulaimanyeh</h1>
-          <p class="text-xs text-amber-400 font-bold">(KEC - EST. 2013) • بەڕێوەبەر: <span id="headerPrincipalName">Ms: Suhaila Ali</span> <span id="roleStatusBadge" class="bg-white/15 text-white px-2 py-0.5 rounded-full text-[10px] mr-1">👨‍🏫 دۆخی مامۆستا</span> <span id="cloudLiveBadge" class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full text-[10px] mr-1">⚡ Firebase Live</span></p>
+          <p class="text-xs text-amber-400 font-bold">(KEC - EST. 2013) • بەڕێوەبەر: <span id="headerPrincipalName">Ms: Suhaila Ali</span> <span id="roleStatusBadge" class="bg-white/15 text-white px-2 py-0.5 rounded-full text-[10px] mr-1">👤 دۆخی میوان</span> <span id="cloudLiveBadge" class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full text-[10px] mr-1">⚡ Firebase Live</span></p>
         </div>
       </div>
       <div class="flex flex-wrap items-center justify-center gap-1.5 w-full">
@@ -173,7 +173,7 @@
         <div class="flex flex-col md:flex-row items-center justify-between gap-3">
           <div>
             <h2 class="text-base md:text-lg font-black text-amber-400">📚 هەڵبژاردنی وانە و چوونەژوورەوەی مامۆستا</h2>
-            <p class="text-xs text-slate-300 mt-1">وانەی خۆت هەڵبژێرە بۆ کردنەوەی تۆماری غیابات</p>
+            <p class="text-xs text-slate-300 mt-1">وانەی خۆت هەڵبژێرە بۆ کردنەوەی تۆماری نەهاتوو</p>
           </div>
           <div id="teacherSlotInfoBadge" style="display:none" class="bg-white/10 px-4 py-2 rounded-xl text-xs font-bold border border-white/15">پۆلی 12 | گروپی F</div>
         </div>
@@ -219,7 +219,7 @@
           <div id="countExcused" class="text-lg font-black text-amber-700">0</div>
         </div>
         <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
-          <div class="text-[11px] font-bold text-red-800">❌ غیاب (A)</div>
+          <div class="text-[11px] font-bold text-red-800">❌ نەهاتوو (A)</div>
           <div id="countAbsent" class="text-lg font-black text-red-700">0</div>
         </div>
         <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 text-center col-span-2 sm:col-span-1">
@@ -366,7 +366,7 @@
     <div id="section-logs" class="space-y-6 hidden">
       <div class="bg-gradient-to-r from-amber-600 to-amber-800 text-white rounded-2xl p-5 shadow-xl">
         <h2 class="text-lg font-black">📜 لۆگەکانی سیستەم</h2>
-        <p class="text-xs text-amber-100 mt-1">چوونەژوورەوەی مامۆستایان، تۆمارکردنی نوێ و گۆڕانکارییەکانی غیابات</p>
+        <p class="text-xs text-amber-100 mt-1">چوونەژوورەوەی مامۆستایان، تۆمارکردنی نوێ و گۆڕانکارییەکانی نەهاتووەکان</p>
       </div>
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-wrap items-center gap-3">
         <label class="text-xs font-bold text-slate-700">ڕۆژ:</label>
@@ -408,6 +408,11 @@
       </div>
       <div id="classPickList" class="grid grid-cols-2 gap-3"></div>
     </div>
+  </div>
+
+  <!-- TEACHER NAME (top right, only when a teacher is logged in) -->
+  <div id="teacherNamePill" style="display:none" class="fixed top-3 right-3 z-[800] bg-slate-950/90 border border-amber-400/50 text-amber-300 px-3 py-1.5 rounded-full text-[11px] font-extrabold shadow-lg shadow-amber-900/30">
+    مامۆستا: <span id="teacherNameText"></span>
   </div>
 
   <!-- REGISTER NEW TEACHER -->
@@ -469,7 +474,7 @@
         </div>
       </div>
       <button onclick="submitPasswordLogin()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow">
-        🔓 کردنەوەی تۆماری غیابات
+        🔓 کردنەوەی تۆماری نەهاتوو
       </button>
     </div>
   </div>
@@ -1300,7 +1305,7 @@
       window.state.grade = Number(parts[0]);
       window.state.group = parts[1];
       openTeacherSession(subjectId, 1, name);
-      addLog("login", { teacher: name, subject: getSubjectName(subjectId), detail: "پۆل " + parts[0] + "-" + parts[1] + " | چووە ناو تۆماری غیابات" });
+      addLog("login", { teacher: name, subject: getSubjectName(subjectId), detail: "پۆل " + parts[0] + "-" + parts[1] + " | چووە ناو تۆماری نەهاتوو" });
       showToast("✅ بە سەرکەوتوویی داخڵ بوویت");
     }
 
@@ -1500,7 +1505,7 @@
               <button onclick="setStatus('${st.id}', 'P')" class="status-btn ${stRec.status === 'P' ? 'active-P' : ''}">✅ ئامادە</button>
               <button onclick="setStatus('${st.id}', 'L')" class="status-btn ${stRec.status === 'L' ? 'active-L' : ''}">⏰ درەنگ</button>
               <button onclick="setStatus('${st.id}', 'E')" class="status-btn ${stRec.status === 'E' ? 'active-E' : ''}">📝 مۆڵەت</button>
-              <button onclick="setStatus('${st.id}', 'A')" class="status-btn ${stRec.status === 'A' ? 'active-A' : ''}">❌ غیاب</button>
+              <button onclick="setStatus('${st.id}', 'A')" class="status-btn ${stRec.status === 'A' ? 'active-A' : ''}">❌ نەهاتوو</button>
             </div>
           </td>
           <td class="p-2 text-center"><input type="text" class="note-input w-40 bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 text-[11px] text-slate-800" placeholder="تێبینی..."></td>
@@ -1723,7 +1728,7 @@
       login: "🔓 چوونەژوورەوەی مامۆستا",
       login_failed: "❌ هەوڵی هەڵە",
       admin_login: "👑 چوونەژوورەوەی بەڕێوەبەر",
-      attendance: "📝 گۆڕانکاری غیابات",
+      attendance: "📝 گۆڕانکاری نەهاتووەکان",
       note: "💬 تێبینی",
       password_reset: "🔑 گۆڕینی پاسۆرد لەلایەن بەڕێوەبەر",
       teacher_deleted: "🗑️ سڕینەوەی مامۆستا",
@@ -1856,7 +1861,7 @@
     }
 
     var WEEKDAY_NAMES = ["یەکشەممە", "دووشەممە", "سێشەممە", "چوارشەممە", "پێنجشەممە", "هەینی", "شەممە"];
-    var STATUS_LABELS = { P: "ئامادە", L: "درەنگ", E: "مۆڵەت", A: "غیاب" };
+    var STATUS_LABELS = { P: "ئامادە", L: "درەنگ", E: "مۆڵەت", A: "نەهاتوو" };
 
     function reportRosterKey() {
       return "grade_" + document.getElementById("reportGrade").value + "_group_" + document.getElementById("reportGroup").value;
@@ -2028,7 +2033,15 @@
     function updateRoleBadge() {
       var b = document.getElementById("roleStatusBadge");
       if (!b) return;
-      b.textContent = window.state.isLoggedInAsPrincipal ? "👑 دۆخی بەڕێوەبەر" : "👨‍🏫 دۆخی مامۆستا";
+      var role = window.state.isLoggedInAsPrincipal ? "👑 دۆخی بەڕێوەبەر" : (window.state.isLoggedInAsTeacher ? "👨‍🏫 دۆخی مامۆستا" : "👤 دۆخی میوان");
+      b.textContent = role;
+      var pill = document.getElementById("teacherNamePill");
+      if (pill) {
+        var showPill = !window.state.isLoggedInAsPrincipal && !!window.state.isLoggedInAsTeacher && !!window.state.currentSessionTeacherName;
+        pill.style.display = showPill ? "" : "none";
+        var nameEl = document.getElementById("teacherNameText");
+        if (nameEl) nameEl.textContent = window.state.currentSessionTeacherName || "";
+      }
       var logsTab = document.getElementById("tab-logs");
       if (logsTab) logsTab.style.display = window.state.isLoggedInAsPrincipal ? "" : "none";
       var manageTab = document.getElementById("tab-manage");
