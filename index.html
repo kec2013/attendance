@@ -142,6 +142,7 @@
       <div id="tab-logs" class="nav-tab" onclick="switchTab('logs')" style="display:none">3. 📜 لۆگەکان</div>
       <div id="tab-manage" class="nav-tab" onclick="switchTab('manage')" style="display:none">4. 🛠️ بەڕێوەبردنی مامۆستایان</div>
       <div id="tab-reports" class="nav-tab" onclick="switchTab('reports')" style="display:none">5. 📥 داگرتنی ڕاپۆرت</div>
+      <div id="tab-profile" class="nav-tab" onclick="switchTab('profile')" style="display:none">3. ⚙️ ڕێکخستنی پرۆفایل</div>
     </div>
   </nav>
 
@@ -291,6 +292,38 @@
             <tbody id="weeklyTableBody" class="divide-y divide-slate-100 text-xs font-semibold text-slate-700"></tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    <!-- TAB: TEACHER PROFILE (teachers only) -->
+    <div id="section-profile" class="space-y-6 hidden">
+      <div class="bg-gradient-to-r from-indigo-700 to-slate-900 text-white rounded-2xl p-5 shadow-xl">
+        <h2 class="text-lg font-black">⚙️ ڕێکخستنی پرۆفایل</h2>
+        <p class="text-xs text-indigo-200 mt-1">پاسۆرد و پۆلەکانی خۆت لێرە بگۆڕە</p>
+      </div>
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+        <h3 class="text-sm font-black text-slate-900">🔑 گۆڕینی پاسۆرد</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-600 block">پاسۆردی کۆن:</label>
+            <input type="password" id="profileOldPass" placeholder="پاسۆردی ئێستا..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900">
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-600 block">پاسۆردی نوێ (لانی کەم ٤ پیت):</label>
+            <input type="password" id="profileNewPass" placeholder="پاسۆردی نوێ..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900">
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-600 block">دووبارەی پاسۆردی نوێ:</label>
+            <input type="password" id="profileNewPassConfirm" placeholder="دووبارە بنووسەوە..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900">
+          </div>
+        </div>
+        <button onclick="changeOwnPassword()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl text-xs font-extrabold shadow">💾 گۆڕینی پاسۆرد</button>
+      </div>
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+        <h3 class="text-sm font-black text-slate-900">🏫 پۆلەکانم</h3>
+        <p class="text-[11px] text-slate-500 font-bold">پۆلەکان هەڵبژێرە یان لایببە. دەتوانیت هەر پۆلێک زیاد بکەیت.</p>
+        <div id="profileClassList" class="grid grid-cols-3 md:grid-cols-6 gap-2"></div>
+        <button onclick="saveOwnClasses()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-xs font-extrabold shadow">💾 پاشەکەوتکردنی پۆلەکان</button>
       </div>
     </div>
 
@@ -535,6 +568,7 @@
     window.addTeacherDevice = (key, deviceHash) => set(ref(db, 'teachers/' + key + '/devices/' + deviceHash), true);
     window.clearTeacherDevices = (key) => set(ref(db, 'teachers/' + key + '/devices'), null);
     window.setTeacherSubjects = (key, subjectIds) => set(ref(db, 'teachers/' + key + '/subjects'), subjectIds);
+    window.updateTeacherClasses = (key, classList) => set(ref(db, 'teachers/' + key + '/classes'), classList);
     window.deleteTeacherRecord = (key) => set(ref(db, 'teachers/' + key), null);
     onValue(settingsRef, (snap) => { window.settingsCache = snap.val() || {}; window.settingsLoaded = true; });
     window.saveTeacherRecord = (key, data) => set(ref(db, 'teachers/' + key), data);
@@ -1114,13 +1148,14 @@
 
     function switchTab(tabId) {
       if (tabId === "weekly" && !canSeeWeekly()) tabId = "subjects";
+      if (tabId === "profile" && !(window.state.isLoggedInAsTeacher && !window.state.isLoggedInAsPrincipal)) tabId = "subjects";
       if ((tabId === "logs" || tabId === "manage" || tabId === "reports") && !window.state.isLoggedInAsPrincipal) {
         openPrincipalModal();
         return;
       }
       window.state.activeTab = tabId;
       saveStateToStorage();
-      ['subjects', 'daily', 'weekly', 'logs', 'manage', 'reports'].forEach(function(t) {
+      ['subjects', 'daily', 'weekly', 'logs', 'manage', 'reports', 'profile'].forEach(function(t) {
         var el = document.getElementById("section-" + t);
         var tabEl = document.getElementById("tab-" + t);
         if (t === tabId) {
@@ -1137,6 +1172,7 @@
       if (tabId === "logs") renderLogs();
       if (tabId === "manage") renderManageTeachers();
       if (tabId === "reports") initReports();
+      if (tabId === "profile") populateProfile();
     }
 
     function selectGrade(g) {
@@ -1308,6 +1344,83 @@
         console.error(err);
       }
       return null;
+    }
+
+    function currentTeacherKey() {
+      return makeTeacherKey(window.state.currentSessionTeacherName || "");
+    }
+
+    function populateProfile() {
+      var box = document.getElementById("profileClassList");
+      if (!box) return;
+      box.innerHTML = "";
+      var rec = (window.teachersCache || {})[currentTeacherKey()];
+      var mine = (rec && rec.classes && rec.classes.length) ? rec.classes : ALL_CLASSES;
+      ALL_CLASSES.forEach(function(c) {
+        var parts = c.split("-");
+        var label = document.createElement("label");
+        label.className = "flex items-center gap-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg px-2 py-1.5 cursor-pointer";
+        var cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.value = c;
+        cb.checked = mine.indexOf(c) !== -1;
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(" " + parts[0] + " - " + parts[1]));
+        box.appendChild(label);
+      });
+    }
+
+    async function changeOwnPassword() {
+      if (!window.state.isLoggedInAsTeacher || window.state.isLoggedInAsPrincipal) return;
+      var key = currentTeacherKey();
+      var rec = (window.teachersCache || {})[key];
+      if (!rec) { showToast("⏳ چاوەڕێ بکە، داتا بار دەبێت"); return; }
+
+      var oldP = document.getElementById("profileOldPass").value.trim();
+      var newP = document.getElementById("profileNewPass").value.trim();
+      var conf = document.getElementById("profileNewPassConfirm").value.trim();
+      if (!oldP || !newP || !conf) { showToast("⚠️ هەموو خانەکان پڕ بکەرەوە"); return; }
+      if (newP.length < 4) { showToast("⚠️ پاسۆردی نوێ دەبێت لانی کەم ٤ پیت بێت"); return; }
+      if (newP !== conf) { showToast("❌ پاسۆردی نوێ و دووبارەکەی یەک ناگرنەوە"); return; }
+
+      try {
+        var oldHash = await sha256Hex(teacherHashInput(key, oldP));
+        if (oldHash !== rec.hash) { showToast("❌ پاسۆردی کۆن هەڵەیە"); return; }
+
+        var newHash = await sha256Hex(teacherHashInput(key, newP));
+        await window.updateTeacherHash(key, newHash);
+        // Sign out other devices; this one stays signed in
+        await window.clearTeacherDevices(key);
+        await rememberThisDevice(key, rec.name);
+
+        addLog("profile_update", { teacher: rec.name, subject: "—", detail: "پاسۆردی گۆڕی" });
+        document.getElementById("profileOldPass").value = "";
+        document.getElementById("profileNewPass").value = "";
+        document.getElementById("profileNewPassConfirm").value = "";
+        showToast("✅ پاسۆردەکەت گۆڕدرا");
+      } catch (err) {
+        console.error(err);
+        showToast("❌ گۆڕینی پاسۆرد سەرکەوتوو نەبوو");
+      }
+    }
+
+    async function saveOwnClasses() {
+      if (!window.state.isLoggedInAsTeacher || window.state.isLoggedInAsPrincipal) return;
+      var key = currentTeacherKey();
+      var rec = (window.teachersCache || {})[key];
+      if (!rec) { showToast("⏳ چاوەڕێ بکە، داتا بار دەبێت"); return; }
+
+      var chosen = Array.from(document.querySelectorAll("#profileClassList input:checked")).map(function(i) { return i.value; });
+      if (chosen.length === 0) { showToast("⚠️ لانی کەم یەک پۆل هەڵبژێرە"); return; }
+
+      try {
+        await window.updateTeacherClasses(key, chosen);
+        addLog("profile_update", { teacher: rec.name, subject: "—", detail: "پۆلەکان: " + chosen.join("، ") });
+        showToast("✅ پۆلەکانت پاشەکەوت کرا");
+      } catch (err) {
+        console.error(err);
+        showToast("❌ پاشەکەوتکردن سەرکەوتوو نەبوو");
+      }
     }
 
     function closeClassPicker() {
@@ -1747,7 +1860,8 @@
       note: "💬 تێبینی",
       password_reset: "🔑 گۆڕینی پاسۆرد لەلایەن بەڕێوەبەر",
       teacher_deleted: "🗑️ سڕینەوەی مامۆستا",
-      report_download: "📥 داگرتنی ڕاپۆرت"
+      report_download: "📥 داگرتنی ڕاپۆرت",
+      profile_update: "⚙️ ڕێکخستنی پرۆفایل"
     };
 
     function renderLogs() {
@@ -2101,6 +2215,8 @@
       if (typeof renderSubjectsGrid === "function") renderSubjectsGrid();
       var reportsTab = document.getElementById("tab-reports");
       if (reportsTab) reportsTab.style.display = window.state.isLoggedInAsPrincipal ? "" : "none";
+      var profileTab = document.getElementById("tab-profile");
+      if (profileTab) profileTab.style.display = (window.state.isLoggedInAsTeacher && !window.state.isLoggedInAsPrincipal) ? "" : "none";
     }
 
     function loginAsPrincipal() {
