@@ -526,6 +526,8 @@
       if (window.state && window.state.activeTab === 'manage' && window.renderManageTeachers) window.renderManageTeachers();
     });
     window.updateTeacherHash = (key, hash) => set(ref(db, 'teachers/' + key + '/hash'), hash);
+    window.addTeacherDevice = (key, deviceHash) => set(ref(db, 'teachers/' + key + '/devices/' + deviceHash), true);
+    window.clearTeacherDevices = (key) => set(ref(db, 'teachers/' + key + '/devices'), null);
     window.deleteTeacherRecord = (key) => set(ref(db, 'teachers/' + key), null);
     onValue(settingsRef, (snap) => { window.settingsCache = snap.val() || {}; window.settingsLoaded = true; });
     window.saveTeacherRecord = (key, data) => set(ref(db, 'teachers/' + key), data);
@@ -1257,6 +1259,38 @@
       document.getElementById("classPickModal").classList.add("show");
     }
 
+    var DEVICE_KEY = "kec_attendance_device";
+
+    // Saves a random token on this device; only its hash goes to Firebase
+    async function rememberThisDevice(key, name) {
+      try {
+        var raw = new Uint8Array(24);
+        crypto.getRandomValues(raw);
+        var token = Array.from(raw).map(function(b) { return b.toString(16).padStart(2, "0"); }).join("");
+        var deviceHash = await sha256Hex("kec-device:" + token);
+        await window.addTeacherDevice(key, deviceHash);
+        localStorage.setItem(DEVICE_KEY, JSON.stringify({ key: key, name: name, token: token }));
+      } catch (err) {
+        console.error("Could not remember this device:", err);
+      }
+    }
+
+    // Returns the teacher if this device is remembered and still allowed in Firebase
+    async function getRememberedTeacher() {
+      var raw = localStorage.getItem(DEVICE_KEY);
+      if (!raw || !window.teachersCache) return null;
+      try {
+        var d = JSON.parse(raw);
+        var rec = window.teachersCache[d.key];
+        if (!rec || !rec.devices) return null;
+        var deviceHash = await sha256Hex("kec-device:" + d.token);
+        if (rec.devices[deviceHash]) return { key: d.key, rec: rec };
+      } catch (err) {
+        console.error(err);
+      }
+      return null;
+    }
+
     function closeClassPicker() {
       document.getElementById("classPickModal").classList.remove("show");
     }
@@ -1290,9 +1324,14 @@
       return s ? s.name : id;
     }
 
-    function promptTeacherLogin(subjectId) {
+    async function promptTeacherLogin(subjectId) {
       if (window.state.isLoggedInAsPrincipal) {
         openTeacherSession(subjectId, 1, "بەڕێوەبەر");
+        return;
+      }
+      var remembered = await getRememberedTeacher();
+      if (remembered) {
+        beginClassPick(subjectId, remembered.rec);
         return;
       }
       pendingLoginSubject = subjectId;
@@ -1324,6 +1363,7 @@
       var hash = await sha256Hex(teacherHashInput(key, pass));
       if (hash === rec.hash) {
         closePasswordModal();
+        rememberThisDevice(key, rec.name);
         beginClassPick(pendingLoginSubject, rec);
       } else {
         addLog("login_failed", { teacher: rec.name, subject: subjectName, detail: "پاسۆرد هەڵە" });
@@ -1793,7 +1833,8 @@
       try {
         var hash = await sha256Hex(teacherHashInput(key, pass));
         await window.updateTeacherHash(key, hash);
-        addLog("password_reset", { teacher: name, subject: "—", detail: "پاسۆردی نوێ دانرا" });
+        await window.clearTeacherDevices(key);
+        addLog("password_reset", { teacher: name, subject: "—", detail: "پاسۆردی نوێ دانرا | ئامێرە پێشوەکان لابران" });
         showToast("✅ پاسۆردەکە گۆڕدرا");
       } catch (err) {
         console.error(err);
