@@ -218,13 +218,13 @@
           <div class="text-[11px] font-bold text-amber-800">📝 مۆڵەت (E)</div>
           <div id="countExcused" class="text-lg font-black text-amber-700">0</div>
         </div>
+        <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 text-center col-span-2 sm:col-span-1">
+          <div class="text-[11px] font-bold text-purple-800">🚪 دەرکراوو (S)</div>
+          <div id="countSentOut" class="text-lg font-black text-purple-700">0</div>
+        </div>
         <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
           <div class="text-[11px] font-bold text-red-800">❌ نەهاتوو (A)</div>
           <div id="countAbsent" class="text-lg font-black text-red-700">0</div>
-        </div>
-        <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 text-center col-span-2 sm:col-span-1">
-          <div class="text-[11px] font-bold text-purple-800">🚪 دەرکراو (S)</div>
-          <div id="countSentOut" class="text-lg font-black text-purple-700">0</div>
         </div>
       </div>
 
@@ -354,6 +354,7 @@
               <th class="p-3">ناوی مامۆستا</th>
               <th class="p-3">تۆمارکراوە لە</th>
               <th class="p-3">پۆلەکان</th>
+              <th class="p-3">وانەکان</th>
               <th class="p-3">کردارەکان</th>
             </tr>
           </thead>
@@ -533,6 +534,7 @@
     window.updateTeacherHash = (key, hash) => set(ref(db, 'teachers/' + key + '/hash'), hash);
     window.addTeacherDevice = (key, deviceHash) => set(ref(db, 'teachers/' + key + '/devices/' + deviceHash), true);
     window.clearTeacherDevices = (key) => set(ref(db, 'teachers/' + key + '/devices'), null);
+    window.setTeacherSubjects = (key, subjectIds) => set(ref(db, 'teachers/' + key + '/subjects'), subjectIds);
     window.deleteTeacherRecord = (key) => set(ref(db, 'teachers/' + key), null);
     onValue(settingsRef, (snap) => { window.settingsCache = snap.val() || {}; window.settingsLoaded = true; });
     window.saveTeacherRecord = (key, data) => set(ref(db, 'teachers/' + key), data);
@@ -1231,6 +1233,18 @@
 
     // After the password is right: open the one class the teacher has for this subject, or let them pick
     function beginClassPick(subjectId, rec) {
+      // Teacher is locked to the subjects they have already opened
+      if (rec.subjects && rec.subjects.length && rec.subjects.indexOf(subjectId) === -1) {
+        showToast("🔒 ئەم وانەیە بۆ تۆ نییە، تەنها وانەی خۆت بکەرەوە");
+        addLog("login_failed", { teacher: rec.name, subject: getSubjectName(subjectId), detail: "وانەی قفڵکراو" });
+        return;
+      }
+      if (!rec.subjects || rec.subjects.length === 0) {
+        // First subject they open becomes their locked subject
+        rec.subjects = [subjectId];
+        window.setTeacherSubjects(makeTeacherKey(rec.name), [subjectId]);
+      }
+
       var subj = defaultSubjects.find(function(s) { return s.id === subjectId; });
       var mine = (rec.classes && rec.classes.length) ? rec.classes : ALL_CLASSES;
       var options = mine.filter(function(c) {
@@ -1505,6 +1519,7 @@
               <button onclick="setStatus('${st.id}', 'P')" class="status-btn ${stRec.status === 'P' ? 'active-P' : ''}">✅ ئامادە</button>
               <button onclick="setStatus('${st.id}', 'L')" class="status-btn ${stRec.status === 'L' ? 'active-L' : ''}">⏰ درەنگ</button>
               <button onclick="setStatus('${st.id}', 'E')" class="status-btn ${stRec.status === 'E' ? 'active-E' : ''}">📝 مۆڵەت</button>
+              <button onclick="setStatus('${st.id}', 'S')" class="status-btn ${stRec.status === 'S' ? 'active-S' : ''}">🚪 دەرکراوو</button>
               <button onclick="setStatus('${st.id}', 'A')" class="status-btn ${stRec.status === 'A' ? 'active-A' : ''}">❌ نەهاتوو</button>
             </div>
           </td>
@@ -1775,19 +1790,40 @@
       });
     }
 
+    function migrateTeacherSubjects() {
+      var logs = Object.values(window.logsCache || {});
+      if (!window.teachersCache || logs.length === 0) return;
+      Object.keys(window.teachersCache).forEach(function(key) {
+        var rec = window.teachersCache[key];
+        if (!rec || (rec.subjects && rec.subjects.length)) return;
+        var found = [];
+        logs.forEach(function(e) {
+          if (!e || !e.teacher || e.type === "login_failed") return;
+          if (makeTeacherKey(e.teacher) !== key) return;
+          var sub = defaultSubjects.find(function(s) { return s.name === e.subject; });
+          if (sub && found.indexOf(sub.id) === -1) found.push(sub.id);
+        });
+        if (found.length) {
+          rec.subjects = found;
+          window.setTeacherSubjects(key, found);
+        }
+      });
+    }
+
     function renderManageTeachers() {
       var tbody = document.getElementById("manageTableBody");
       if (!tbody) return;
+      migrateTeacherSubjects();
       tbody.innerHTML = "";
       var list = Object.keys(window.teachersCache || {}).map(function(k) {
         var v = window.teachersCache[k] || {};
-        return { key: k, name: v.name || k, createdAt: v.createdAt || "", classes: v.classes || null };
+        return { key: k, name: v.name || k, createdAt: v.createdAt || "", classes: v.classes || null, subjects: v.subjects || null };
       });
       list.sort(function(a, b) { return a.name.localeCompare(b.name); });
 
       if (list.length === 0) {
         var empty = document.createElement("tr");
-        empty.innerHTML = '<td colspan="4" class="p-6 text-center text-slate-400 font-bold">هیچ مامۆستایەک تۆمار نەکراوە</td>';
+        empty.innerHTML = '<td colspan="5" class="p-6 text-center text-slate-400 font-bold">هیچ مامۆستایەک تۆمار نەکراوە</td>';
         tbody.appendChild(empty);
         return;
       }
@@ -1823,7 +1859,17 @@
 
         tr.appendChild(nameTd);
         tr.appendChild(dateTd);
+        var subTd = document.createElement("td");
+        subTd.className = "p-3 font-bold text-indigo-800";
+        if (t.subjects && t.subjects.length) {
+          subTd.textContent = t.subjects.map(function(id) { return getSubjectName(id); }).join("، ");
+        } else {
+          subTd.className = "p-3 text-slate-400 font-bold";
+          subTd.textContent = "هێشتا قفڵ نەکراوە";
+        }
+
         tr.appendChild(clsTd);
+        tr.appendChild(subTd);
         tr.appendChild(actTd);
         tbody.appendChild(tr);
       });
@@ -1861,7 +1907,7 @@
     }
 
     var WEEKDAY_NAMES = ["یەکشەممە", "دووشەممە", "سێشەممە", "چوارشەممە", "پێنجشەممە", "هەینی", "شەممە"];
-    var STATUS_LABELS = { P: "ئامادە", L: "درەنگ", E: "مۆڵەت", A: "نەهاتوو" };
+    var STATUS_LABELS = { P: "ئامادە", L: "درەنگ", E: "مۆڵەت", S: "دەرکراوو", A: "نەهاتوو" };
 
     function reportRosterKey() {
       return "grade_" + document.getElementById("reportGrade").value + "_group_" + document.getElementById("reportGroup").value;
