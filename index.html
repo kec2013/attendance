@@ -187,6 +187,16 @@
       <div>
         <button onclick="switchTab('subjects')" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow">➡️ گەڕانەوە بۆ وانەکان</button>
       </div>
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="text-xs font-extrabold text-slate-800">📍 ئایا لە پۆلەکەدایت؟</p>
+          <p id="teacherPresenceStatus" class="text-[11px] text-slate-500 font-bold">هێشتا تۆمار نەکراوە</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="setTeacherPresence(true)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow">✅ لە پۆلدام</button>
+          <button onclick="setTeacherPresence(false)" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow">❌ لە پۆل نیم</button>
+        </div>
+      </div>
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-2 flex-wrap">
           <span class="text-xs font-bold text-slate-600">📅 ڕێکەوت:</span>
@@ -1173,6 +1183,7 @@
       if (tabId === "manage") renderManageTeachers();
       if (tabId === "reports") initReports();
       if (tabId === "profile") populateProfile();
+      if (tabId === "daily") renderTeacherPresence();
     }
 
     function selectGrade(g) {
@@ -1421,6 +1432,33 @@
         console.error(err);
         showToast("❌ پاشەکەوتکردن سەرکەوتوو نەبوو");
       }
+    }
+
+    var teacherPresence = null;
+
+    function setTeacherPresence(inClass) {
+      if (!window.state.isLoggedInAsTeacher && !window.state.isLoggedInAsPrincipal) return;
+      var name = window.state.currentSessionTeacherName || "—";
+      var subjectName = getSubjectName(window.state.currentSessionSubject);
+      teacherPresence = { inClass: inClass, at: new Date() };
+      addLog("presence", {
+        teacher: name,
+        subject: subjectName,
+        detail: inClass ? "لە پۆلدایە" : "لە پۆل نییە"
+      });
+      renderTeacherPresence();
+      showToast(inClass ? "✅ تۆمارکرا: لە پۆلدایت" : "❌ تۆمارکرا: لە پۆل نیت");
+    }
+
+    function renderTeacherPresence() {
+      var el = document.getElementById("teacherPresenceStatus");
+      if (!el) return;
+      if (!teacherPresence) {
+        el.textContent = "هێشتا تۆمار نەکراوە";
+        return;
+      }
+      var time = teacherPresence.at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      el.textContent = (teacherPresence.inClass ? "✅ لە پۆلدایە" : "❌ لە پۆل نییە") + " — " + time;
     }
 
     function closeClassPicker() {
@@ -1861,7 +1899,8 @@
       password_reset: "🔑 گۆڕینی پاسۆرد لەلایەن بەڕێوەبەر",
       teacher_deleted: "🗑️ سڕینەوەی مامۆستا",
       report_download: "📥 داگرتنی ڕاپۆرت",
-      profile_update: "⚙️ ڕێکخستنی پرۆفایل"
+      profile_update: "⚙️ ڕێکخستنی پرۆفایل",
+      presence: "📍 ئامادەبوونی مامۆستا"
     };
 
     function renderLogs() {
