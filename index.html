@@ -114,36 +114,25 @@
     }
     .modal-backdrop.show { display: flex; }
     /* ===== TIMETABLE ===== */
-    .tt-grid { display: grid; grid-template-columns: 150px repeat(6, minmax(0, 1fr)); gap: 8px; }
-    .tt-corner, .tt-ph, .tt-day, .tt-cell { animation: tt-in .45s cubic-bezier(.2,.8,.2,1) backwards; animation-delay: var(--d, 0ms); }
-    .tt-corner, .tt-ph { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 6px; border-radius: 14px; background: linear-gradient(135deg, #0a1428, #1e3a8a); color: #fff; font-weight: 800; font-size: .8rem; border-bottom: 3px solid #f59e0b; }
-    .tt-pn { font-size: 1.2rem; line-height: 1; color: #fbbf24; }
-    .tt-pt { font-size: .66rem; color: #cbd5e1; direction: ltr; font-family: ui-monospace, Menlo, monospace; }
-    .tt-day { appearance: none; border: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 12px 8px; border-radius: 16px; background: linear-gradient(160deg, #112240, #1d3557); color: #fff; font-family: inherit; box-shadow: 0 4px 12px rgba(15,23,42,.18); transition: transform .2s, box-shadow .2s; }
-    .tt-dayname { font-size: 1rem; font-weight: 900; color: #fde68a; }
-    .tt-date { font-size: .68rem; color: #cbd5e1; direction: ltr; font-family: ui-monospace, Menlo, monospace; }
-    .tt-open { font-size: .66rem; font-weight: 800; background: rgba(255,255,255,.12); border-radius: 999px; padding: 3px 8px; }
+    .tt-grid { display: grid; grid-template-columns: 120px repeat(6, minmax(0, 1fr)); gap: 8px; }
+    .tt-day, .tt-cell { animation: tt-in .45s cubic-bezier(.2,.8,.2,1) backwards; animation-delay: var(--d, 0ms); }
+    .tt-day { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 6px; border-radius: 14px; background: linear-gradient(160deg, #112240, #1d3557); color: #fff; box-shadow: 0 4px 12px rgba(15,23,42,.18); }
+    .tt-dayname { font-size: .95rem; font-weight: 900; color: #fde68a; }
+    .tt-date { font-size: .66rem; color: #cbd5e1; direction: ltr; font-family: ui-monospace, Menlo, monospace; }
     .tt-day.is-today { box-shadow: 0 0 0 2px #fbbf24, 0 4px 12px rgba(15,23,42,.18); }
-    .tt-cell { position: relative; overflow: hidden; background: #fff; border: 1px solid #e2e8f0; border-top: 4px solid var(--c, #64748b); border-radius: 14px; padding: 12px 8px 10px; min-height: 88px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; box-shadow: 0 1px 2px rgba(15,23,42,.06); transition: transform .2s, box-shadow .2s; }
-    .tt-mlabel { display: none; font-size: .64rem; color: #64748b; direction: ltr; font-family: ui-monospace, Menlo, monospace; }
-    .tt-subj { font-weight: 900; color: #0f172a; font-size: .95rem; display: flex; align-items: center; gap: 6px; }
-    .tt-ico { font-size: 1rem; }
-    .tt-teacher { font-size: .76rem; font-weight: 700; color: #475569; }
-    .tt-cell.is-now { box-shadow: 0 0 0 2px #f59e0b, 0 8px 20px rgba(245,158,11,.25); }
+    .tt-cell { position: relative; overflow: hidden; appearance: none; font-family: inherit; cursor: pointer; background: #fff; border: 1px solid #e2e8f0; border-top: 4px solid #1d3557; border-radius: 14px; padding: 16px 8px; min-height: 64px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(15,23,42,.06); transition: transform .2s, box-shadow .2s; }
+    .tt-cname { font-weight: 900; color: #0f172a; font-size: 1rem; }
+    .tt-cell.is-now { border-top-color: #f59e0b; box-shadow: 0 0 0 2px #f59e0b, 0 8px 20px rgba(245,158,11,.25); }
     .tt-cell.is-now::after { content: ""; position: absolute; inset: 0; border-radius: 14px; background: radial-gradient(circle at center, rgba(245,158,11,.22), transparent 70%); animation: tt-pulse 2.4s ease-in-out infinite; pointer-events: none; }
     @keyframes tt-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
     @keyframes tt-pulse { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
     @media (hover: hover) {
       .tt-cell:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(15,23,42,.12); }
-      .tt-day:hover { transform: translateY(-2px); }
     }
-    .tt-day:active, .tt-cell:active { transform: scale(.97); }
+    .tt-cell:active { transform: scale(.97); }
     @media (max-width: 720px) {
       .tt-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .tt-corner, .tt-ph { display: none; }
-      .tt-day { grid-column: span 2; flex-direction: row; justify-content: space-between; padding: 12px 14px; }
-      .tt-cell { min-height: 74px; }
-      .tt-mlabel { display: block; }
+      .tt-day { grid-column: span 2; flex-direction: row; justify-content: space-between; padding: 10px 14px; }
     }
 
     /* ===== ABSENT STUDENTS WINDOW ===== */
@@ -206,7 +195,7 @@
   <nav class="max-w-6xl mx-auto px-4 mt-4">
     <div class="bg-slate-900 p-1.5 rounded-2xl flex gap-1 shadow-lg">
       <div id="tab-subjects" class="nav-tab active" onclick="switchTab('subjects')">1. 📚 وانەکان</div>
-      <div id="tab-weekly" class="nav-tab" onclick="switchTab('weekly')" style="display:none">2. 📅 خشتەی وانەکان</div>
+      <div id="tab-weekly" class="nav-tab" onclick="switchTab('weekly')" style="display:none">2. 📊 خشتەی هەفتانە</div>
       <div id="tab-logs" class="nav-tab" onclick="switchTab('logs')" style="display:none">3. 📜 لۆگەکان</div>
       <div id="tab-manage" class="nav-tab" onclick="switchTab('manage')" style="display:none">4. 🛠️ بەڕێوەبردنی مامۆستایان</div>
       <div id="tab-reports" class="nav-tab" onclick="switchTab('reports')" style="display:none">5. 📥 داگرتنی ڕاپۆرت</div>
@@ -238,6 +227,18 @@
 
     <!-- TAB 1: SUBJECTS -->
     <div id="section-subjects" class="space-y-6">
+      <div id="timetableWrap" class="hidden space-y-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex items-center justify-between gap-3 flex-wrap">
+          <div class="min-w-0">
+            <h3 class="text-sm font-black text-slate-800">📅 خشتەی وانەکان</h3>
+            <p id="ttWeekLabel" class="text-[11px] font-bold text-slate-500 mt-1" dir="ltr"></p>
+          </div>
+          <button type="button" onclick="renderTimetable()" class="pill-btn bg-slate-900 text-white">🔄 نوێکردنەوە</button>
+        </div>
+        <p class="text-[11px] font-bold text-slate-500 px-1">کلاسێک کلیک بکە بۆ بینینی ئەو خوێندکارانەی لەو کاتەدا لە پۆل نەبوون.</p>
+        <div id="timetableRoot"></div>
+      </div>
+
       <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-5 shadow-xl border border-slate-800">
         <div class="flex flex-col md:flex-row items-center justify-between gap-3">
           <div>
@@ -367,17 +368,35 @@
       </div>
     </div>
 
-    <!-- TAB 2: TIMETABLE (خشتەی وانەکان) -->
-    <div id="section-weekly" class="space-y-5 hidden">
-      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex items-center justify-between gap-3 flex-wrap">
-        <div class="min-w-0">
-          <h3 class="text-sm font-black text-slate-800">📅 خشتەی وانەکان</h3>
-          <p id="ttWeekLabel" class="text-[11px] font-bold text-slate-500 mt-1" dir="ltr"></p>
+    <!-- TAB 3: WEEKLY REPORT -->
+    <div id="section-weekly" class="space-y-6 hidden">
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex items-center justify-between">
+        <h3 class="text-xs font-black text-slate-800">📊 خشتەی هەفتانەی ئامادەبوون</h3>
+        <div class="flex items-center gap-2 flex-wrap">
+          <span id="weeklySubjectLabel" class="text-xs font-extrabold bg-indigo-50 text-indigo-800 px-3 py-1.5 rounded-lg"></span>
+          <select id="weeklySubjectSelect" onchange="renderWeeklyTable()" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-900" style="display:none"></select>
         </div>
-        <button type="button" onclick="renderWeeklyTable()" class="pill-btn bg-slate-900 text-white">🔄 نوێکردنەوە</button>
+        <button onclick="renderWeeklyTable()" class="pill-btn bg-slate-900 text-white">🔄 نوێکردنەوە</button>
       </div>
-      <p class="text-[11px] font-bold text-slate-500 px-1">ڕۆژێک کلیک بکە بۆ بینینی ئەو خوێندکارانەی لە پۆل نین.</p>
-      <div id="timetableRoot"></div>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-right border-collapse">
+            <thead>
+              <tr class="bg-slate-100 text-slate-700 text-[11px] font-extrabold border-b border-slate-200">
+                <th class="p-3 w-12 text-center">#</th>
+                <th class="p-3">ناوی خوێندکار</th>
+                <th class="p-3 text-center">یەکشەممە</th>
+                <th class="p-3 text-center">دووشەممە</th>
+                <th class="p-3 text-center">سێشەممە</th>
+                <th class="p-3 text-center">چوارشەممە</th>
+                <th class="p-3 text-center">پێنجشەممە</th>
+                <th class="p-3 text-center">کردار</th>
+              </tr>
+            </thead>
+            <tbody id="weeklyTableBody" class="divide-y divide-slate-100 text-xs font-semibold text-slate-700"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- TAB: TEACHER PROFILE (teachers only) -->
@@ -619,6 +638,7 @@
     window.logsCache = {};
     onValue(logsRef, (snap) => {
       window.logsCache = snap.val() || {};
+      if (ttModal.open) refreshAbsentModal();
       if (window.refreshAdminOverview) window.refreshAdminOverview();
       if (window.state && window.state.activeTab === 'logs' && window.renderLogs) window.renderLogs();
     });
@@ -2000,7 +2020,11 @@
       addLog("attendance", {
         teacher: currentTeacherLabel(),
         subject: getSubjectName(window.state.currentSessionSubject),
-        detail: studentNameById(studentId) + " → " + status
+        detail: studentNameById(studentId) + " → " + status,
+        date: window.state.date,
+        classLabel: window.state.grade + "-" + window.state.group,
+        studentName: studentNameById(studentId),
+        statusCode: status
       });
       
       var wKey = getRosterKey() + "_" + (window.state.currentSessionSubject || "physics");
@@ -2029,6 +2053,85 @@
       });
     }
 
+    // Which subject the weekly table shows: the admin picks one, a teacher sees their own
+    function weeklySubjectId() {
+      if (window.state.isLoggedInAsPrincipal) {
+        var sel = document.getElementById("weeklySubjectSelect");
+        if (sel && sel.value) return sel.value;
+      }
+      return window.state.currentSessionSubject || "physics";
+    }
+
+    function updateWeeklyHeader() {
+      var isAdmin = !!window.state.isLoggedInAsPrincipal;
+      var label = document.getElementById("weeklySubjectLabel");
+      var sel = document.getElementById("weeklySubjectSelect");
+      if (sel) {
+        sel.style.display = isAdmin ? "" : "none";
+        if (isAdmin) {
+          var prev = sel.value || window.state.currentSessionSubject;
+          sel.innerHTML = "";
+          defaultSubjects.filter(function(sub) { return sub.grades.includes(Number(window.state.grade)); })
+            .forEach(function(sub) {
+              var opt = document.createElement("option");
+              opt.value = sub.id;
+              opt.textContent = sub.name;
+              sel.appendChild(opt);
+            });
+          sel.value = Array.from(sel.options).some(function(o) { return o.value === prev; })
+            ? prev : (sel.options[0] ? sel.options[0].value : "");
+        }
+      }
+      if (label) {
+        label.style.display = isAdmin ? "none" : "";
+        label.textContent = "📘 " + getSubjectName(weeklySubjectId());
+      }
+    }
+
+    function renderWeeklyTable() {
+      var tbody = document.getElementById("weeklyTableBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+      updateWeeklyHeader();
+
+      var rKey = getRosterKey();
+      var students = window.state.rosters[rKey] || [];
+      var days = ["Sun", "Mon", "Tue", "Wed", "Thu"];
+      var wKey = rKey + "_" + weeklySubjectId();
+
+      students.forEach(function(st, idx) {
+        var cells = days.map(function(d) {
+          var s = (window.state.weeklyRecords[wKey] && window.state.weeklyRecords[wKey][st.id] && window.state.weeklyRecords[wKey][st.id][d]) || "P";
+          return `<td class="p-3 text-center font-bold text-xs">${s}</td>`;
+        }).join("");
+
+        var tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition-colors";
+        tr.innerHTML = `
+          <td class="p-3 text-center font-mono font-bold">${idx + 1}</td>
+          <td class="p-3 font-extrabold text-slate-900">${st.name}</td>
+          ${cells}
+          <td class="p-3 text-center">
+            <button onclick="sendWeeklyWhatsApp('${st.id}')" class="bg-emerald-600 text-white px-3 py-1 rounded-lg text-xs font-bold">📲 وەتسئەپ</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function sendWeeklyWhatsApp(studentId) {
+      var rKey = getRosterKey();
+      var st = (window.state.rosters[rKey] || []).find(s => s.id === studentId);
+      if (!st || !st.phone) {
+        showToast("❌ ژمارەی بەخێوکار نییە!");
+        return;
+      }
+      var cleanPhone = st.phone.replace(/[^0-9]/g, "");
+      if (cleanPhone.startsWith("07")) cleanPhone = "964" + cleanPhone.slice(1);
+      var text = `🏫 KEC Sulaimanyeh\nئاگاداری ئامادەبوونی خوێندکار: ${st.name}\nپۆلی ${window.state.grade}-${window.state.group}`;
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`, "_blank");
+    }
+
     // ===== TIMETABLE (خشتەی وانەکان) =====
     var TT_DAYS = [
       { name: "یەکشەممە", num: 0 },
@@ -2045,25 +2148,11 @@
       { n: 5, from: "11:10", to: "11:50" },
       { n: 6, from: "11:50", to: "12:30" }
     ];
-    // Lessons: [subject id, label, teacher]. Row = day (Sun..Thu), column = period 1..6
-    var TT_LESSONS = [
-      [["physics", "Physics", "Mahmood"], ["biology", "Biology", "Iqbal Abd"], ["pe", "P.E", "Sarwar"], ["kurdish", "Kurdish", "Rebwar"], ["arabic", "Arabic", "Kanar"], ["english", "English", "Aras"]],
-      [["physics", "Physics", "Mahmood"], ["chemistry", "Chemistry", "Rezan"], ["islamic", "Religion", "Kanar"], ["arabic", "Arabic", "Kanar"], ["it", "I.T.", "Roza"], ["math", "Math", "Burhan"]],
-      [["chemistry", "Chemistry", "Rezan"], ["math", "Math", "Burhan"], ["biology", "Biology", "Iqbal Abd"], ["physics", "Physics", "Mahmood"], ["art", "Art", "Heshooo"], ["english", "English", "Aras"]],
-      [["physics", "Physics", "Mahmood"], ["biology", "Biology", "Iqbal Abd"], ["math", "Math", "Burhan"], ["chemistry", "Chemistry", "Rezan"], ["english", "English", "Aras"], ["kurdish", "Kurdish", "Rebwar"]],
-      [["biology", "Biology", "Iqbal Abd"], ["chemistry", "Chemistry", "Rezan"], ["arabic", "Arabic", "Kanar"], ["math", "Math", "Burhan"], ["kurdish", "Kurdish", "Rebwar"], ["english", "English", "Aras"]]
-    ];
-    var TT_STYLE = {
-      physics: ["⚡", "#2563eb"], biology: ["🧬", "#16a34a"], pe: ["⚽", "#ea580c"],
-      kurdish: ["📕", "#db2777"], arabic: ["📗", "#0d9488"], english: ["📘", "#4f46e5"],
-      chemistry: ["🧪", "#9333ea"], math: ["📐", "#0284c7"], islamic: ["🕌", "#65a30d"],
-      it: ["💻", "#0891b2"], art: ["🎨", "#e11d48"]
-    };
     var TT_OUT_STATUSES = ["A", "E", "S"];
     var TT_STATUS_TEXT = { A: "نەهاتوو", E: "مۆڵەت", S: "دەرکراوو" };
     var TT_STATUS_ICON = { A: "❌", E: "📝", S: "🚪" };
     var TT_STATUS_COLOR = { A: "#dc2626", E: "#d97706", S: "#7c3aed" };
-    var ttModal = { open: false, date: "", dayName: "", items: [], filter: "ALL", query: "" };
+    var ttModal = { open: false, date: "", dayName: "", period: -1, items: [], filter: "ALL", query: "" };
 
     function ttEsc(s) {
       return String(s == null ? "" : s).replace(/[&<>"']/g, function(c) {
@@ -2074,6 +2163,15 @@
     function ttMinutes(hm) {
       var parts = hm.split(":");
       return Number(parts[0]) * 60 + Number(parts[1]);
+    }
+
+    // Index of the class period that contains the given time (device time), or -1
+    function ttPeriodAt(d) {
+      var mins = d.getHours() * 60 + d.getMinutes();
+      for (var i = 0; i < TT_PERIODS.length; i++) {
+        if (mins >= ttMinutes(TT_PERIODS[i].from) && mins < ttMinutes(TT_PERIODS[i].to)) return i;
+      }
+      return -1;
     }
 
     // Sunday..Thursday dates of the week that contains the selected attendance date
@@ -2087,88 +2185,110 @@
       });
     }
 
-    // Index of the period happening right now (device time), or -1
-    function ttCurrentPeriod() {
-      var now = new Date();
-      var mins = now.getHours() * 60 + now.getMinutes();
-      for (var i = 0; i < TT_PERIODS.length; i++) {
-        if (mins >= ttMinutes(TT_PERIODS[i].from) && mins < ttMinutes(TT_PERIODS[i].to)) return i;
-      }
-      return -1;
+    // Splits the old log text "name → A" into name and status code
+    function ttParseDetail(detail) {
+      var s = String(detail || "");
+      var i = s.lastIndexOf(" → ");
+      if (i < 0) return { name: "", code: "" };
+      return { name: s.slice(0, i), code: s.slice(i + 3).trim() };
     }
 
-    function renderWeeklyTable() {
+    // Old logs have no class: find it by name in the rosters (only if the name is unique)
+    function ttClassByName(name) {
+      var found = [];
+      Object.keys(window.state.rosters || {}).forEach(function(rKey) {
+        var m = /^grade_(\d+)_group_([A-F])$/.exec(rKey);
+        if (!m) return;
+        (window.state.rosters[rKey] || []).forEach(function(st) {
+          if (st.name === name) found.push(m[1] + "-" + m[2]);
+        });
+      });
+      return found.length === 1 ? found[0] : "—";
+    }
+
+    // Latest status per student + subject + date. Keeps only students who are not in class,
+    // and groups them by "date|period index" using the time the status was pressed.
+    function buildOutIndex() {
+      var latest = {};
+      var logs = window.logsCache || {};
+      Object.keys(logs).forEach(function(id) {
+        var e = logs[id];
+        if (!e || e.type !== "attendance" || !e.time) return;
+        var parsed = ttParseDetail(e.detail);
+        var name = e.studentName || parsed.name;
+        var code = e.statusCode || parsed.code;
+        if (!name || !code) return;
+        var date = e.date || localDateStr(new Date(e.time));
+        var k = date + "|" + name + "|" + (e.subject || "");
+        if (!latest[k] || e.time > latest[k].time) {
+          latest[k] = { date: date, name: name, code: code, time: e.time, teacher: e.teacher || "—", subject: e.subject || "—", classLabel: e.classLabel || "" };
+        }
+      });
+      var index = {};
+      Object.keys(latest).forEach(function(k) {
+        var r = latest[k];
+        if (TT_OUT_STATUSES.indexOf(r.code) === -1) return;
+        var d = new Date(r.time);
+        if (localDateStr(d) !== r.date) return;
+        var p = ttPeriodAt(d);
+        if (p < 0) return;
+        var key = r.date + "|" + p;
+        (index[key] = index[key] || []).push({
+          name: r.name,
+          status: r.code,
+          teacher: r.teacher,
+          subject: r.subject,
+          classLabel: r.classLabel || ttClassByName(r.name),
+          hhmm: String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0")
+        });
+      });
+      Object.keys(index).forEach(function(key) {
+        index[key].sort(function(a, b) {
+          return a.classLabel.localeCompare(b.classLabel) || a.name.localeCompare(b.name);
+        });
+      });
+      return index;
+    }
+
+    function ttCurrentPeriod() {
+      return ttPeriodAt(new Date());
+    }
+
+    function renderTimetable() {
+      var wrap = document.getElementById("timetableWrap");
       var root = document.getElementById("timetableRoot");
-      if (!root) return;
+      if (!wrap || !root) return;
+      var show = canSeeWeekly();
+      wrap.classList.toggle("hidden", !show);
+      if (!show) { root.innerHTML = ""; return; }
+
       var week = ttWeekDates();
       var todayNum = new Date().getDay();
       var nowPeriod = ttCurrentPeriod();
       var label = document.getElementById("ttWeekLabel");
-      if (label) label.textContent = "Week: " + week[0].date + "  →  " + week[TT_DAYS.length - 1].date;
+      if (label) label.textContent = week[0].date + "  →  " + week[TT_DAYS.length - 1].date;
 
       var html = '<div class="tt-grid">';
-      html += '<div class="tt-corner" style="--d:0ms">ڕۆژ</div>';
-      TT_PERIODS.forEach(function(p, i) {
-        html += '<div class="tt-ph" style="--d:' + (30 + i * 40) + 'ms"><span class="tt-pn">' + p.n + '</span><span class="tt-pt">' + p.from + ' - ' + p.to + '</span></div>';
-      });
       week.forEach(function(w, di) {
         var isToday = w.day.num === todayNum;
-        html += '<button type="button" class="tt-day' + (isToday ? ' is-today' : '') + '" style="--d:' + (60 + di * 70) + 'ms" onclick="openAbsentModal(\'' + w.date + '\', \'' + w.day.name + '\')">' +
+        html += '<div class="tt-day' + (isToday ? ' is-today' : '') + '" style="--d:' + (40 + di * 70) + 'ms">' +
           '<span class="tt-dayname">' + w.day.name + '</span>' +
-          '<span class="tt-date">' + w.date + '</span>' +
-          '<span class="tt-open">🚪 غیابی ئەم ڕۆژە ↗</span></button>';
-        TT_LESSONS[di].forEach(function(les, pi) {
-          var st = TT_STYLE[les[0]] || ["📚", "#64748b"];
+          '<span class="tt-date">' + w.date + '</span></div>';
+        TT_PERIODS.forEach(function(p, pi) {
           var isNow = isToday && pi === nowPeriod;
-          var p = TT_PERIODS[pi];
-          html += '<div class="tt-cell' + (isNow ? ' is-now' : '') + '" style="--c:' + st[1] + ';--d:' + (100 + di * 70 + pi * 35) + 'ms">' +
-            '<div class="tt-mlabel">' + p.n + ' · ' + p.from + ' - ' + p.to + '</div>' +
-            '<div class="tt-subj"><span class="tt-ico">' + st[0] + '</span>' + ttEsc(les[1]) + '</div>' +
-            '<div class="tt-teacher">T. ' + ttEsc(les[2]) + '</div></div>';
+          html += '<button type="button" class="tt-cell' + (isNow ? ' is-now' : '') + '" style="--d:' + (80 + di * 70 + pi * 30) + 'ms" onclick="openAbsentModal(\'' + w.date + '\', \'' + w.day.name + '\', ' + pi + ')">' +
+            '<span class="tt-cname">Class ' + p.n + '</span></button>';
         });
       });
       html += '</div>';
       root.innerHTML = html;
     }
 
-    // Every student across grades 10-12 and groups A-F who is not in class on dateStr
-    function collectOutOfClass(dateStr) {
-      var re = /^grade_(\d+)_group_([A-F])_(\d{4}-\d{2}-\d{2})_([a-z]+)$/;
-      var items = [];
-      var daily = window.state.dailyRecords || {};
-      Object.keys(daily).forEach(function(dKey) {
-        var m = re.exec(dKey);
-        if (!m || m[3] !== dateStr) return;
-        var rKey = "grade_" + m[1] + "_group_" + m[2];
-        var roster = window.state.rosters[rKey] || [];
-        var recs = daily[dKey] || {};
-        Object.keys(recs).forEach(function(sid) {
-          var rec = recs[sid];
-          if (!rec || TT_OUT_STATUSES.indexOf(rec.status) === -1) return;
-          var st = roster.find(function(x) { return x.id === sid; });
-          if (!st) return;
-          items.push({
-            grade: Number(m[1]),
-            group: m[2],
-            subject: getSubjectName(m[4]),
-            status: rec.status,
-            note: rec.note || "",
-            name: String(st.name || "")
-          });
-        });
-      });
-      items.sort(function(a, b) {
-        return (a.grade - b.grade) ||
-          (a.group < b.group ? -1 : a.group > b.group ? 1 : 0) ||
-          a.name.localeCompare(b.name);
-      });
-      return items;
-    }
-
-    function openAbsentModal(dateStr, dayName) {
+    function openAbsentModal(dateStr, dayName, period) {
       ttModal.open = true;
       ttModal.date = dateStr;
       ttModal.dayName = dayName;
+      ttModal.period = period;
       ttModal.filter = "ALL";
       ttModal.query = "";
       var search = document.getElementById("absentSearch");
@@ -2187,9 +2307,13 @@
 
     function refreshAbsentModal() {
       if (!ttModal.open) return;
-      ttModal.items = collectOutOfClass(ttModal.date);
+      var index = buildOutIndex();
+      ttModal.items = index[ttModal.date + "|" + ttModal.period] || [];
+      var p = TT_PERIODS[ttModal.period];
       var sub = document.getElementById("absentSub");
-      if (sub) sub.textContent = ttModal.dayName + " · " + ttModal.date + " · کۆی گشتی: " + ttModal.items.length;
+      if (sub && p) {
+        sub.textContent = ttModal.dayName + " · " + ttModal.date + " · Class " + p.n + " (" + p.from + " - " + p.to + ") · کۆی گشتی: " + ttModal.items.length;
+      }
       renderAbsentList();
     }
 
@@ -2231,10 +2355,9 @@
       body.innerHTML = list.map(function(r) {
         return '<div class="absent-row" style="--c:' + TT_STATUS_COLOR[r.status] + '">' +
           '<div class="min-w-0"><div class="absent-name">' + ttEsc(r.name) + '</div>' +
-          '<div class="absent-meta">' + ttEsc(r.subject) + '</div>' +
-          (r.note ? '<div class="absent-note">📝 ' + ttEsc(r.note) + '</div>' : '') + '</div>' +
+          '<div class="absent-meta">👤 ' + ttEsc(r.teacher) + ' · ' + ttEsc(r.subject) + ' · 🕒 ' + r.hhmm + '</div></div>' +
           '<div class="absent-right">' +
-          '<span class="absent-class">' + r.grade + '-' + r.group + '</span>' +
+          '<span class="absent-class">' + ttEsc(r.classLabel) + '</span>' +
           '<span class="absent-st st-' + r.status + '">' + TT_STATUS_ICON[r.status] + ' ' + TT_STATUS_TEXT[r.status] + '</span>' +
           '</div></div>';
       }).join("");
@@ -2665,6 +2788,7 @@
       if (manageTab) manageTab.style.display = window.state.isLoggedInAsPrincipal ? "" : "none";
       var weeklyTab = document.getElementById("tab-weekly");
       if (weeklyTab) weeklyTab.style.display = canSeeWeekly() ? "" : "none";
+      renderTimetable();
       var isAdm = !!window.state.isLoggedInAsPrincipal;
       var gradeBar = document.getElementById("gradeGroupBar");
       if (gradeBar) gradeBar.style.display = "none";
