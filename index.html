@@ -190,6 +190,20 @@
           <div id="inactiveList" class="space-y-2"></div>
         </div>
       </div>
+      <div id="classStudentsPanel" style="display:none" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+        <div class="flex items-center justify-between gap-3">
+          <h3 id="classStudentsTitle" class="text-sm font-black text-slate-900"></h3>
+          <button onclick="closeClassStudents()" class="text-slate-400 hover:text-slate-700 font-bold text-lg">✕</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-right">
+            <thead class="bg-slate-50 text-slate-700 font-extrabold">
+              <tr><th class="p-3 w-12">#</th><th class="p-3">ناوی خوێندکار</th><th class="p-3">دۆخ</th></tr>
+            </thead>
+            <tbody id="classStudentsBody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- TAB 2: DAILY REGISTER -->
@@ -201,6 +215,7 @@
         <div>
           <p class="text-xs font-extrabold text-slate-800">📍 ئایا لە پۆلەکەدایت؟</p>
           <p id="teacherPresenceStatus" class="text-[11px] text-slate-500 font-bold">هێشتا تۆمار نەکراوە</p>
+          <p id="teacherPresenceTimerRow" style="display:none" class="text-xs font-extrabold text-emerald-700 mt-1">کاتی ماوە: <span id="teacherPresenceClock" class="font-mono text-lg font-black"></span></p>
         </div>
         <div class="flex gap-2">
           <button onclick="setTeacherPresence(true)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow">✅ لە پۆلدام</button>
@@ -466,7 +481,7 @@
 
   <!-- TEACHER NAME (top right, only when a teacher is logged in) -->
   <div id="teacherNamePill" style="display:none" class="fixed top-3 right-3 z-[800] bg-slate-950/90 border border-amber-400/50 text-amber-300 px-3 py-1.5 rounded-full text-[11px] font-extrabold shadow-lg shadow-amber-900/30">
-    مامۆستا: <span id="teacherNameText"></span>
+    مامۆستا: <span id="teacherNameText"></span> <span id="teacherPillTimer" style="display:none">⏱ <span id="teacherPillClock" class="font-mono"></span></span>
   </div>
 
   <!-- TOAST NOTIFICATION -->
@@ -556,6 +571,7 @@
     window.clearTeacherDevices = (key) => set(ref(db, 'teachers/' + key + '/devices'), null);
     window.setTeacherSubjects = (key, subjectIds) => set(ref(db, 'teachers/' + key + '/subjects'), subjectIds);
     window.updateTeacherClasses = (key, classList) => set(ref(db, 'teachers/' + key + '/classes'), classList);
+    window.setTeacherPresenceRecord = (key, data) => set(ref(db, 'teachers/' + key + '/presence'), data);
     window.deleteTeacherRecord = (key) => set(ref(db, 'teachers/' + key), null);
     onValue(settingsRef, (snap) => { window.settingsCache = snap.val() || {}; window.settingsLoaded = true; });
     window.saveTeacherRecord = (key, data) => set(ref(db, 'teachers/' + key), data);
@@ -1411,33 +1427,42 @@
       }
     }
 
-    // Pure logic: works out active / inactive rows from teachers and today's check-ins
-    function buildOverviewRows(teachers, logs, today) {
-      var latest = {};
-      logs.filter(function(e) { return e && e.type === "presence" && e.time && e.teacher && localDateStr(new Date(e.time)) === today; })
-        .sort(function(a, b) { return a.time.localeCompare(b.time); })
-        .forEach(function(e) { latest[makeTeacherKey(e.teacher)] = e; });
+    var PRESENCE_MINUTES = 40;
+    var openedClass = null;
+    var STATUS_ICONS = { P: "✅ ئامادە", L: "⏰ درەنگ", E: "📝 مۆڵەت", S: "🚪 دەرکراوو", A: "❌ نەهاتوو" };
+    var STATUS_TEXT_CLASS = { P: "text-emerald-700", L: "text-sky-700", E: "text-amber-700", S: "text-purple-700", A: "text-red-700" };
 
+    function formatRemaining(ms) {
+      var total = Math.max(0, Math.ceil(ms / 1000));
+      var m = Math.floor(total / 60);
+      var s = total % 60;
+      return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+    }
+
+    function canUsePresence() {
+      return !!(window.state.isLoggedInAsTeacher && !window.state.isLoggedInAsPrincipal);
+    }
+
+    // Pure logic: a class is active only while its teacher's timer is still running
+    function buildOverviewRows(teachers, nowMs) {
       var active = [], inactive = [];
       Object.keys(teachers || {}).forEach(function(key) {
         var rec = teachers[key];
         if (!rec) return;
-        var classes = rec.classes || [];
+        var p = rec.presence || null;
+        var live = !!(p && p.inClass && p.endAt && p.endAt > nowMs);
         var subjIds = rec.subjects || [];
-        var p = latest[key];
-        classes.forEach(function(c) {
+        (rec.classes || []).forEach(function(c) {
           var grade = Number(c.split("-")[0]);
-          var subs = subjIds.length
-            ? subjIds.map(function(id) { return defaultSubjects.find(function(s) { return s.id === id; }); })
-                .filter(function(s) { return s && s.grades.includes(grade); })
-            : [];
-          if (subs.length === 0) {
-            inactive.push({ teacher: rec.name || key, subject: "هێشتا قفڵ نەکراوە", subjectId: null, grade: c });
+          if (subjIds.length === 0) {
+            inactive.push({ teacher: rec.name || key, subject: "هێشتا قفڵ نەکراوە", subjectId: null, grade: c, endAt: null });
             return;
           }
-          subs.forEach(function(sub) {
-            var row = { teacher: rec.name || key, subject: sub.name, subjectId: sub.id, grade: c };
-            var isActive = !!(p && p.inClass === true && p.classKey === c && p.subjectId === sub.id);
+          subjIds.forEach(function(id) {
+            var sub = defaultSubjects.find(function(s) { return s.id === id; });
+            if (!sub || !sub.grades.includes(grade)) return;
+            var isActive = live && p.classKey === c && p.subjectId === sub.id;
+            var row = { teacher: rec.name || key, subject: sub.name, subjectId: sub.id, grade: c, endAt: isActive ? p.endAt : null };
             (isActive ? active : inactive).push(row);
           });
         });
@@ -1446,18 +1471,6 @@
       active.sort(byGrade);
       inactive.sort(byGrade);
       return { active: active, inactive: inactive };
-    }
-
-    function openFromOverview(grade, subjId) {
-      var parts = grade.split("-");
-      window.state.grade = Number(parts[0]);
-      window.state.group = parts[1];
-      window.state.currentSessionSubject = subjId;
-      saveStateToStorage();
-      switchTab("weekly");
-      var sel = document.getElementById("weeklySubjectSelect");
-      if (sel) sel.value = subjId;
-      renderWeeklyTable();
     }
 
     function renderOverviewList(listId, rows, isActive) {
@@ -1471,11 +1484,12 @@
         return;
       }
       rows.forEach(function(r) {
-        var card = document.createElement(r.subjectId ? "button" : "div");
+        var clickable = isActive && !!r.subjectId;
+        var card = document.createElement(clickable ? "button" : "div");
         card.className = "w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-right";
-        if (r.subjectId) {
-          card.addEventListener("click", function() { openFromOverview(r.grade, r.subjectId); });
-          card.className += " hover:bg-slate-100";
+        if (clickable) {
+          card.className += " hover:bg-emerald-50 cursor-pointer";
+          card.addEventListener("click", function() { openClassStudents(r.grade, r.subjectId); });
         }
         var dot = document.createElement("span");
         dot.className = "w-3 h-3 rounded-full flex-shrink-0 " + (isActive ? "bg-emerald-500" : "bg-red-500");
@@ -1491,55 +1505,174 @@
         text.appendChild(meta);
         card.appendChild(dot);
         card.appendChild(text);
+        if (isActive && r.endAt) {
+          var wrap = document.createElement("div");
+          wrap.className = "text-left flex-shrink-0";
+          var label = document.createElement("p");
+          label.className = "text-[10px] font-bold text-slate-500";
+          label.textContent = "کاتی ماوە";
+          var clock = document.createElement("p");
+          clock.className = "font-mono font-black text-emerald-700 text-sm";
+          clock.setAttribute("data-endat", String(r.endAt));
+          clock.setAttribute("data-live", "1");
+          clock.textContent = formatRemaining(r.endAt - Date.now());
+          wrap.appendChild(label);
+          wrap.appendChild(clock);
+          card.appendChild(wrap);
+        }
         box.appendChild(card);
       });
     }
 
     function renderAdminOverview() {
-      var box = document.getElementById("adminOverview");
-      if (!box) return;
-      var res = buildOverviewRows(window.teachersCache, Object.values(window.logsCache || {}), localDateStr(new Date()));
+      if (!document.getElementById("adminOverview")) return;
+      var res = buildOverviewRows(window.teachersCache, Date.now());
       renderOverviewList("activeList", res.active, true);
       renderOverviewList("inactiveList", res.inactive, false);
       document.getElementById("activeCount").textContent = res.active.length;
       document.getElementById("inactiveCount").textContent = res.inactive.length;
     }
 
+    function openClassStudents(grade, subjId) {
+      openedClass = { grade: grade, subjectId: subjId };
+      renderClassStudents();
+      var panel = document.getElementById("classStudentsPanel");
+      if (panel) panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function closeClassStudents() {
+      openedClass = null;
+      renderClassStudents();
+    }
+
+    function buildClassStudentRows(rosters, dailyRecords, grade, grp, subjId, date) {
+      var rKey = "grade_" + grade + "_group_" + grp;
+      var recs = (dailyRecords || {})[rKey + "_" + date + "_" + subjId] || {};
+      return ((rosters || {})[rKey] || []).map(function(st, idx) {
+        var rec = recs[st.id];
+        return { n: idx + 1, name: st.name, status: rec && rec.status ? rec.status : null };
+      });
+    }
+
+    function renderClassStudents() {
+      var panel = document.getElementById("classStudentsPanel");
+      if (!panel) return;
+      if (!openedClass) { panel.style.display = "none"; return; }
+      var parts = openedClass.grade.split("-");
+      var date = localDateStr(new Date());
+      var rows = buildClassStudentRows(window.state.rosters, window.state.dailyRecords, parts[0], parts[1], openedClass.subjectId, date);
+      document.getElementById("classStudentsTitle").textContent = getSubjectName(openedClass.subjectId) + " — پۆل " + parts[0] + "-" + parts[1] + " — " + date;
+      var body = document.getElementById("classStudentsBody");
+      body.innerHTML = "";
+      if (rows.length === 0) {
+        body.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-slate-400 font-bold">هیچ خوێندکارێک لەم پۆلەدا نییە</td></tr>';
+      }
+      rows.forEach(function(r) {
+        var tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50";
+        var tdN = document.createElement("td");
+        tdN.className = "p-3 font-mono font-bold";
+        tdN.textContent = r.n;
+        var tdName = document.createElement("td");
+        tdName.className = "p-3 font-extrabold text-slate-900";
+        tdName.textContent = r.name;
+        var tdS = document.createElement("td");
+        tdS.className = "p-3 font-extrabold " + (r.status ? STATUS_TEXT_CLASS[r.status] : "text-slate-400");
+        tdS.textContent = r.status ? (STATUS_ICONS[r.status] || r.status) : "— هێشتا تۆمار نەکراوە";
+        tr.appendChild(tdN);
+        tr.appendChild(tdName);
+        tr.appendChild(tdS);
+        body.appendChild(tr);
+      });
+      panel.style.display = "";
+    }
+
+    // Updates every live countdown on the page twice a second
+    function tickPresenceTimers() {
+      var now = Date.now();
+      var expired = false;
+      document.querySelectorAll("[data-endat]").forEach(function(el) {
+        var left = Number(el.getAttribute("data-endat")) - now;
+        el.textContent = formatRemaining(left);
+        if (left <= 0 && el.getAttribute("data-live") === "1") {
+          el.setAttribute("data-live", "0");
+          expired = true;
+        }
+      });
+      if (expired) refreshAdminOverview();
+    }
+    setInterval(tickPresenceTimers, 500);
+
     function refreshAdminOverview() {
       if (window.state && window.state.isLoggedInAsPrincipal && window.state.activeTab === "subjects") {
         renderAdminOverview();
+        renderClassStudents();
       }
+      if (canUsePresence()) renderTeacherPresence();
     }
 
-    var teacherPresence = null;
-
-    function setTeacherPresence(inClass) {
-      if (!window.state.isLoggedInAsTeacher && !window.state.isLoggedInAsPrincipal) return;
-      var name = window.state.currentSessionTeacherName || "—";
-      var subjectName = getSubjectName(window.state.currentSessionSubject);
-      teacherPresence = { inClass: inClass, at: new Date() };
-      addLog("presence", {
-        teacher: name,
-        subject: subjectName,
-        subjectId: window.state.currentSessionSubject,
-        classKey: window.state.grade + "-" + window.state.group,
+    // Teacher starts or stops the 40-minute timer; it is saved in the database so the principal sees it live
+    async function setTeacherPresence(inClass) {
+      if (!canUsePresence()) return;
+      var key = currentTeacherKey();
+      var rec = (window.teachersCache || {})[key];
+      if (!rec) { showToast("⏳ چاوەڕێ بکە، داتا بار دەبێت"); return; }
+      var now = Date.now();
+      var data = {
         inClass: !!inClass,
-        detail: inClass ? "لە پۆلدایە" : "لە پۆل نییە"
+        classKey: window.state.grade + "-" + window.state.group,
+        subjectId: window.state.currentSessionSubject,
+        startedAt: now,
+        endAt: inClass ? now + PRESENCE_MINUTES * 60000 : null
+      };
+      try {
+        await window.setTeacherPresenceRecord(key, data);
+      } catch (err) {
+        console.error(err);
+        showToast("❌ تۆمارکردن سەرکەوتوو نەبوو");
+        return;
+      }
+      addLog("presence", {
+        teacher: rec.name,
+        subject: getSubjectName(data.subjectId),
+        subjectId: data.subjectId,
+        classKey: data.classKey,
+        inClass: data.inClass,
+        detail: inClass ? "لە پۆلدایە (" + PRESENCE_MINUTES + " خولەک)" : "لە پۆل نییە"
       });
-      refreshAdminOverview();
       renderTeacherPresence();
-      showToast(inClass ? "✅ تۆمارکرا: لە پۆلدایت" : "❌ تۆمارکرا: لە پۆل نیت");
+      showToast(inClass ? "✅ کاتژمێری " + PRESENCE_MINUTES + " خولەک دەستی پێکرد" : "❌ تۆمارکرا: لە پۆل نیت");
     }
 
     function renderTeacherPresence() {
       var el = document.getElementById("teacherPresenceStatus");
-      if (!el) return;
-      if (!teacherPresence) {
-        el.textContent = "هێشتا تۆمار نەکراوە";
-        return;
+      var row = document.getElementById("teacherPresenceTimerRow");
+      var clock = document.getElementById("teacherPresenceClock");
+      var pill = document.getElementById("teacherPillTimer");
+      var pillClock = document.getElementById("teacherPillClock");
+      var rec = canUsePresence() ? (window.teachersCache || {})[currentTeacherKey()] : null;
+      var p = rec ? rec.presence : null;
+      var now = Date.now();
+      var running = !!(p && p.inClass && p.endAt && p.endAt > now);
+      if (el) {
+        if (!p) el.textContent = "هێشتا تۆمار نەکراوە";
+        else if (!p.inClass) el.textContent = "❌ لە پۆل نیت";
+        else el.textContent = running ? "✅ لە پۆلدایە" : "⌛ کاتەکە تەواو بوو";
       }
-      var time = teacherPresence.at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      el.textContent = (teacherPresence.inClass ? "✅ لە پۆلدایە" : "❌ لە پۆل نییە") + " — " + time;
+      [clock, pillClock].forEach(function(t) {
+        if (!t) return;
+        if (running) {
+          t.setAttribute("data-endat", String(p.endAt));
+          t.setAttribute("data-live", "1");
+          t.textContent = formatRemaining(p.endAt - now);
+        } else {
+          t.removeAttribute("data-endat");
+          t.removeAttribute("data-live");
+          t.textContent = "";
+        }
+      });
+      if (row) row.style.display = running ? "" : "none";
+      if (pill) pill.style.display = running ? "" : "none";
     }
 
     function closeClassPicker() {
