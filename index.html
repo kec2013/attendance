@@ -643,7 +643,14 @@
       if (window.refreshAdminOverview) window.refreshAdminOverview();
       if (window.state && window.state.activeTab === 'logs' && window.renderLogs) window.renderLogs();
     });
-    window.pushLog = (entry) => push(logsRef, entry);
+    window.pushLog = (entry) => {
+      try {
+        const r = push(logsRef, entry);
+        if (r && typeof r.catch === "function") r.catch(err => console.error("Log write failed:", err));
+      } catch (err) {
+        console.error("Log write failed:", err);
+      }
+    };
     window.teachersCache = {};
     window.settingsCache = {};
     window.settingsLoaded = false;
@@ -1121,7 +1128,7 @@
       activeTab: "subjects",
       grade: 12,
       group: "F",
-      date: new Date().toISOString().slice(0, 10),
+      date: localDateStr(new Date()),
       dayOfWeek: "Sun",
       currentSessionSubject: "physics",
       currentSessionTeacherSlot: 1,
@@ -2247,7 +2254,7 @@
         var r = latest[k];
         if (TT_OUT_STATUSES.indexOf(r.code) === -1) return;
         var d = new Date(r.time);
-        if (localDateStr(d) !== r.date) return;
+        var pressedOn = localDateStr(d);
         var slot = ttSlotFor(d);
         var key = r.date + "|" + slot.index;
         (index[key] = index[key] || []).push({
@@ -2257,6 +2264,7 @@
           subject: r.subject,
           classLabel: r.classLabel || ttClassByName(r.name),
           flag: slot.flag,
+          pressedOn: pressedOn,
           hhmm: String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0")
         });
       });
@@ -2374,7 +2382,7 @@
       body.innerHTML = list.map(function(r) {
         return '<div class="absent-row" style="--c:' + TT_STATUS_COLOR[r.status] + '">' +
           '<div class="min-w-0"><div class="absent-name">' + ttEsc(r.name) + '</div>' +
-          '<div class="absent-meta">👤 ' + ttEsc(r.teacher) + ' · ' + ttEsc(r.subject) + ' · 🕒 ' + r.hhmm + (r.flag === "after" ? ' · ⏰ دوای کاتی وانە' : (r.flag === "before" ? ' · ⏰ پێش کاتی وانە' : '')) + '</div></div>' +
+          '<div class="absent-meta">👤 ' + ttEsc(r.teacher) + ' · ' + ttEsc(r.subject) + ' · 🕒 ' + r.hhmm + (r.flag === "after" ? ' · ⏰ دوای کاتی وانە' : (r.flag === "before" ? ' · ⏰ پێش کاتی وانە' : '')) + (r.pressedOn && r.pressedOn !== ttModal.date ? ' · 🗓 گۆڕدراوە لە ' + r.pressedOn : '') + '</div></div>' +
           '<div class="absent-right">' +
           '<span class="absent-class">' + ttEsc(r.classLabel) + '</span>' +
           '<span class="absent-st st-' + r.status + '">' + TT_STATUS_ICON[r.status] + ' ' + TT_STATUS_TEXT[r.status] + '</span>' +
@@ -2437,8 +2445,12 @@
     function addLog(type, data) {
       if (!window.pushLog) return;
       try {
-        window.pushLog(Object.assign({ type: type, time: new Date().toISOString() }, data));
-      } catch (e) {}
+        var entry = Object.assign({ type: type, time: new Date().toISOString() }, data);
+        // Firebase rejects undefined values, so strip them out before writing
+        window.pushLog(JSON.parse(JSON.stringify(entry)));
+      } catch (e) {
+        console.error("Log not saved:", e);
+      }
     }
 
     function currentTeacherLabel() {
