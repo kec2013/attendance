@@ -278,7 +278,7 @@
     <!-- TAB 2: DAILY REGISTER -->
     <div id="section-daily" class="space-y-6 hidden">
       <div>
-        <button onclick="switchTab('subjects')" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow">➡️ گەڕانەوە بۆ وانەکان</button>
+        <button onclick="switchTab('subjects')" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow">➡️ گەڕانەوە بۆ سەرەتا</button>
       </div>
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -1846,7 +1846,8 @@
       window.state.currentSessionSubject = subjectId;
       window.state.currentSessionTeacherSlot = slot;
       window.state.currentSessionTeacherName = teacherName || "";
-      window.state.isLoggedInAsTeacher = !window.state.isLoggedInAsPrincipal;
+      window.state.isLoggedInAsPrincipal = false;
+      window.state.isLoggedInAsTeacher = true;
       updateRoleBadge();
       saveStateToStorage();
       switchTab("daily");
@@ -2258,7 +2259,7 @@
       var wrap = document.getElementById("timetableWrap");
       var root = document.getElementById("timetableRoot");
       if (!wrap || !root) return;
-      var show = canSeeWeekly();
+      var show = !!window.state.isLoggedInAsPrincipal;
       wrap.classList.toggle("hidden", !show);
       if (!show) { root.innerHTML = ""; return; }
 
@@ -2285,6 +2286,7 @@
     }
 
     function openAbsentModal(dateStr, dayName, period) {
+      if (!window.state.isLoggedInAsPrincipal) return;
       ttModal.open = true;
       ttModal.date = dateStr;
       ttModal.dayName = dayName;
@@ -2812,7 +2814,15 @@
       if (profileTab) profileTab.style.display = (window.state.isLoggedInAsTeacher && !window.state.isLoggedInAsPrincipal) ? "" : "none";
     }
 
+    function clearTeacherSession() {
+      window.state.isLoggedInAsTeacher = false;
+      window.state.currentSessionTeacherName = "";
+      window.state.currentSessionSubject = "";
+      window.state.currentSessionTeacherSlot = null;
+    }
+
     function loginAsPrincipal() {
+      clearTeacherSession();
       window.state.isLoggedInAsPrincipal = true;
       updateRoleBadge();
       addLog("admin_login", { teacher: "بەڕێوەبەر", subject: "—", detail: "چووە ناو سیستەم" });
@@ -2848,6 +2858,7 @@
       }
     }
     function logoutPrincipalRole() {
+      clearTeacherSession();
       window.state.isLoggedInAsPrincipal = false;
       updateRoleBadge();
       switchTab("subjects");
