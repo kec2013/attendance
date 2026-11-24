@@ -120,8 +120,9 @@
     .tt-dayname { font-size: .95rem; font-weight: 900; color: #fde68a; }
     .tt-date { font-size: .66rem; color: #cbd5e1; direction: ltr; font-family: ui-monospace, Menlo, monospace; }
     .tt-day.is-today { box-shadow: 0 0 0 2px #fbbf24, 0 4px 12px rgba(15,23,42,.18); }
-    .tt-cell { position: relative; overflow: hidden; appearance: none; font-family: inherit; cursor: pointer; background: #fff; border: 1px solid #e2e8f0; border-top: 4px solid #1d3557; border-radius: 14px; padding: 16px 8px; min-height: 64px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(15,23,42,.06); transition: transform .2s, box-shadow .2s; }
+    .tt-cell { position: relative; overflow: hidden; appearance: none; font-family: inherit; cursor: pointer; background: #fff; border: 1px solid #e2e8f0; border-top: 4px solid #1d3557; border-radius: 14px; padding: 14px 8px; min-height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 1px 2px rgba(15,23,42,.06); transition: transform .2s, box-shadow .2s; }
     .tt-cname { font-weight: 900; color: #0f172a; font-size: 1rem; }
+    .tt-ctime { font-size: .7rem; font-weight: 700; color: #64748b; direction: ltr; font-family: ui-monospace, Menlo, monospace; }
     .tt-cell.is-now { border-top-color: #f59e0b; box-shadow: 0 0 0 2px #f59e0b, 0 8px 20px rgba(245,158,11,.25); }
     .tt-cell.is-now::after { content: ""; position: absolute; inset: 0; border-radius: 14px; background: radial-gradient(circle at center, rgba(245,158,11,.22), transparent 70%); animation: tt-pulse 2.4s ease-in-out infinite; pointer-events: none; }
     @keyframes tt-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -235,7 +236,7 @@
           </div>
           <button type="button" onclick="renderTimetable()" class="pill-btn bg-slate-900 text-white">🔄 نوێکردنەوە</button>
         </div>
-        <p class="text-[11px] font-bold text-slate-500 px-1">کلاسێک کلیک بکە بۆ بینینی ئەو خوێندکارانەی لەو کاتەدا لە پۆل نەبوون.</p>
+        <p class="text-[11px] font-bold text-slate-500 px-1">کلاسێک کلیک بکە. کاتی گۆڕینی ڕەوشی خوێندکار دیاری دەکات کە کام کلاس دەژمێردرێت.</p>
         <div id="timetableRoot"></div>
       </div>
 
@@ -2142,12 +2143,12 @@
       { name: "پێنجشەممە", num: 4 }
     ];
     var TT_PERIODS = [
-      { n: 1, from: "08:00", to: "08:40" },
-      { n: 2, from: "08:40", to: "09:20" },
-      { n: 3, from: "09:35", to: "10:15" },
-      { n: 4, from: "10:15", to: "10:55" },
-      { n: 5, from: "11:10", to: "11:50" },
-      { n: 6, from: "11:50", to: "12:30" }
+      { n: 1, from: "08:30", to: "09:10" },
+      { n: 2, from: "09:10", to: "09:50" },
+      { n: 3, from: "10:05", to: "10:45" },
+      { n: 4, from: "10:45", to: "11:25" },
+      { n: 5, from: "11:40", to: "12:20" },
+      { n: 6, from: "12:20", to: "13:00" }
     ];
     var TT_OUT_STATUSES = ["A", "E", "S"];
     var TT_STATUS_TEXT = { A: "نەهاتوو", E: "مۆڵەت", S: "دەرکراوو" };
@@ -2166,8 +2167,24 @@
       return Number(parts[0]) * 60 + Number(parts[1]);
     }
 
-    // Index of the class period that contains the given time (device time), or -1
-    function ttPeriodAt(d) {
+    // Which class a status press belongs to.
+    // Before the first class -> class 1 (flag "before").
+    // After the last class ends -> class 6 (flag "after").
+    // A rest gap between classes belongs to the class that started most recently.
+    function ttSlotFor(d) {
+      var mins = d.getHours() * 60 + d.getMinutes();
+      var last = TT_PERIODS.length - 1;
+      if (mins < ttMinutes(TT_PERIODS[0].from)) return { index: 0, flag: "before" };
+      if (mins >= ttMinutes(TT_PERIODS[last].to)) return { index: last, flag: "after" };
+      var idx = 0;
+      for (var i = 0; i < TT_PERIODS.length; i++) {
+        if (mins >= ttMinutes(TT_PERIODS[i].from)) idx = i;
+      }
+      return { index: idx, flag: "" };
+    }
+
+    // Index of the class whose time window contains this moment, or -1
+    function ttInClass(d) {
       var mins = d.getHours() * 60 + d.getMinutes();
       for (var i = 0; i < TT_PERIODS.length; i++) {
         if (mins >= ttMinutes(TT_PERIODS[i].from) && mins < ttMinutes(TT_PERIODS[i].to)) return i;
@@ -2231,15 +2248,15 @@
         if (TT_OUT_STATUSES.indexOf(r.code) === -1) return;
         var d = new Date(r.time);
         if (localDateStr(d) !== r.date) return;
-        var p = ttPeriodAt(d);
-        if (p < 0) return;
-        var key = r.date + "|" + p;
+        var slot = ttSlotFor(d);
+        var key = r.date + "|" + slot.index;
         (index[key] = index[key] || []).push({
           name: r.name,
           status: r.code,
           teacher: r.teacher,
           subject: r.subject,
           classLabel: r.classLabel || ttClassByName(r.name),
+          flag: slot.flag,
           hhmm: String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0")
         });
       });
@@ -2252,7 +2269,7 @@
     }
 
     function ttCurrentPeriod() {
-      return ttPeriodAt(new Date());
+      return ttInClass(new Date());
     }
 
     function renderTimetable() {
@@ -2278,7 +2295,7 @@
         TT_PERIODS.forEach(function(p, pi) {
           var isNow = isToday && pi === nowPeriod;
           html += '<button type="button" class="tt-cell' + (isNow ? ' is-now' : '') + '" style="--d:' + (80 + di * 70 + pi * 30) + 'ms" onclick="openAbsentModal(\'' + w.date + '\', \'' + w.day.name + '\', ' + pi + ')">' +
-            '<span class="tt-cname">Class ' + p.n + '</span></button>';
+            '<span class="tt-cname">Class ' + p.n + '</span><span class="tt-ctime">' + p.from + ' - ' + p.to + '</span></button>';
         });
       });
       html += '</div>';
@@ -2357,7 +2374,7 @@
       body.innerHTML = list.map(function(r) {
         return '<div class="absent-row" style="--c:' + TT_STATUS_COLOR[r.status] + '">' +
           '<div class="min-w-0"><div class="absent-name">' + ttEsc(r.name) + '</div>' +
-          '<div class="absent-meta">👤 ' + ttEsc(r.teacher) + ' · ' + ttEsc(r.subject) + ' · 🕒 ' + r.hhmm + '</div></div>' +
+          '<div class="absent-meta">👤 ' + ttEsc(r.teacher) + ' · ' + ttEsc(r.subject) + ' · 🕒 ' + r.hhmm + (r.flag === "after" ? ' · ⏰ دوای کاتی وانە' : (r.flag === "before" ? ' · ⏰ پێش کاتی وانە' : '')) + '</div></div>' +
           '<div class="absent-right">' +
           '<span class="absent-class">' + ttEsc(r.classLabel) + '</span>' +
           '<span class="absent-st st-' + r.status + '">' + TT_STATUS_ICON[r.status] + ' ' + TT_STATUS_TEXT[r.status] + '</span>' +
