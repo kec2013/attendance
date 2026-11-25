@@ -51,6 +51,11 @@
       input, select, textarea { font-size: 16px !important; }
     }
     .top-header {
+      /* Header stays on top of page content when it sticks while scrolling.
+         Layer order: content < header (700) < teacher pill (800) < popups (1000) < absent window (1100) < toast (2000) */
+      position: sticky;
+      top: 0;
+      z-index: 700;
       background: linear-gradient(135deg, #0a1428 0%, #162a4a 60%, #1e3a8a 100%);
       color: #fff;
       border-bottom: 3px solid #f59e0b;
@@ -113,6 +118,9 @@
       padding: 16px;
     }
     .modal-backdrop.show { display: flex; }
+    /* Wide tables scroll inside their own box on phones, even before Tailwind has loaded */
+    .overflow-x-auto { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+
     /* ===== TIMETABLE ===== */
     .tt-grid { display: grid; grid-template-columns: 120px repeat(6, minmax(0, 1fr)); gap: 8px; }
     .tt-day, .tt-cell { animation: tt-in .45s cubic-bezier(.2,.8,.2,1) backwards; animation-delay: var(--d, 0ms); }
@@ -174,7 +182,7 @@
 
 
   <!-- TOP HEADER -->
-  <header class="top-header p-4 sticky top-0 z-45">
+  <header class="top-header p-4">
     <div class="max-w-6xl mx-auto flex flex-col items-center justify-center gap-4 text-center">
       <div class="flex items-center gap-3.5 text-center md:text-right">
         <div class="relative w-20 h-20 rounded-full bg-white p-1 shadow-2xl border-2 border-amber-400 cursor-pointer flex-shrink-0 overflow-hidden">
